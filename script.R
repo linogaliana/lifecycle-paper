@@ -1,4 +1,4 @@
-
+# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/capitulation")
 
 aws.s3::save_object(object = "Destinie.zip", bucket = "groupe-788",
                     file = "~/Destinie.zip")
@@ -52,7 +52,8 @@ data_prediction <- capitulation::prepare_data(
   inheritance_model = inheritance_model
 )
 
-fst::write_fst(data_prediction, "./data_prediction.fst")
+aws.s3::s3saveRDS(data_prediction, "./data_prediction.rds",
+               bucket = "groupe-788")
 
 
 # load(paste0(path_data, "/individual_data2.RData"))
@@ -61,4 +62,64 @@ fst::write_fst(data_prediction, "./data_prediction.fst")
 
 
 macro <- capitulation::macro
+
+
+EP_2015 <- wealthyR::read_EP(macro,
+                             path_data = path_data,
+                             year = 2015,
+                             .colsWealth = c('IDENT','AGEPR','POND',
+                                             'PATRI_NET','PATRI_BRUT',
+                                             'PATFI','PATFIMTC_DECL',
+                                             'PATFISOM','PATIMM',
+                                             'PATPROFENT','PATPROFHENT',
+                                             'PATRIC_DECL','NBUC','NPERS')
+)
+
+EP_2018 <- wealthyR::read_EP(macro,
+                             path_data = path_data,
+                             year = 2018,
+                             .colsWealth = c('IDENT','AGEPR',
+                                             #'POND','PATRI_NET',
+                                             'PATRI_BRUT',
+                                             'PATFI',
+                                             #'PATFIMTC_DECL',
+                                             'PATFISOM','PATIMM',
+                                             'PATPROFENT','PATPROFHENT',
+                                             'NBUC','NPERS'#,'PATRIC_DECL')
+                             )
+)
+
+
+# +++++++++++++++++++++++++++++++++++++++++++++++
+# B/ CREATE LONGITUDINAL INDIVIDUAL DATA ========
+# +++++++++++++++++++++++++++++++++++++++++++++++
+
+EP_lon <- wealthyR::longitudinal_survey(macro = macro,
+                                        path_data = path_data,
+                                        EP_2015 = EP_2015,
+                                        EP_2018 = EP_2018)
+
+
+menages_structural2 <- data.table::copy(data_prediction)
+
+
+menages_structural2[,c("H_given","H_received") := NULL]
+
+
+output <- wealthyR::estimation_theta(
+  theta_0 = c("beta" = 0.9,
+              "gamma" = 0.5),
+  model_function = wealthyR:::loss_function,
+  prediction_function = wealthyR:::model_capitulation,
+  method = "one_step",
+  r = 0.03,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = 26L,
+  scale = "log",
+  verbose = TRUE,
+  Hgiven_var = "H_given",
+  Hreceived_var = "H_received")
 
