@@ -123,3 +123,17 @@ output <- wealthyR::estimation_theta(
   Hgiven_var = "H_given",
   Hreceived_var = "H_received")
 
+
+system.time(
+  wealthyR:::model_capitulation(c("beta" = 0.9,
+                             "gamma" = 0.5),
+                           r = 0.03,
+                           EP_2015 = EP_2015,
+                           EP_lon = EP_lon,
+                           EP_2018 = EP_2018,
+                           data_microsimulated = menages_structural2,
+                           N_moments = 26L,
+                           scale = "log",
+                           verbose = FALSE
+                           )
+)
