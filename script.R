@@ -1,4 +1,9 @@
+# install.packages("RcppEigen")
+# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/retage")
 # devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/capitulation")
+# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/wealthyr")
+
+
 
 aws.s3::save_object(object = "Destinie.zip", bucket = "groupe-788",
                     file = "~/Destinie.zip")
