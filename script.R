@@ -2,8 +2,9 @@
 # devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/retage")
 # devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/capitulation")
 # devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/wealthyr")
+# devtools::install_github("linogaliana/tablelight")
 
-
+library(tablelight)
 
 aws.s3::save_object(object = "Destinie.zip", bucket = "groupe-788",
                     file = "~/Destinie.zip")
@@ -57,7 +58,7 @@ data_prediction <- capitulation::prepare_data(
   inheritance_model = inheritance_model
 )
 
-aws.s3::s3saveRDS(data_prediction, "./data_prediction.rds",
+aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
                bucket = "groupe-788")
 
 
