@@ -1,8 +1,8 @@
 # install.packages("RcppEigen")
-# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/retage")
-# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/capitulation")
-# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/wealthyr")
-# devtools::install_github("linogaliana/tablelight")
+# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/retage", upgrade = "never")
+# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/capitulation", upgrade = "never")
+# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/wealthyr", upgrade = "never")
+# devtools::install_github("linogaliana/tablelight", upgrade = "never")
 
 library(tablelight)
 
@@ -111,7 +111,7 @@ menages_structural2 <- data.table::copy(data_prediction)
 
 menages_structural2[,c("H_given","H_received") := NULL]
 
-
+# NO INHERITANCE
 output <- wealthyR::estimation_theta(
   theta_0 = c("beta" = 0.9,
               "gamma" = 0.5),
@@ -129,6 +129,24 @@ output <- wealthyR::estimation_theta(
   Hgiven_var = "H_given",
   Hreceived_var = "H_received")
 
+menages_structural2 <- data.table::copy(data_prediction)
+
+output <- wealthyR::estimation_theta(
+  theta_0 = c("beta" = 0.9,
+              "gamma" = 0.5),
+  model_function = wealthyR:::loss_function,
+  prediction_function = wealthyR:::model_capitulation,
+  method = "one_step",
+  r = 0.03,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = 26L,
+  scale = "log",
+  verbose = TRUE,
+  Hgiven_var = "H_given",
+  Hreceived_var = "H_received")
 
 system.time(
   wealthyR:::model_capitulation(c("beta" = 0.9,
