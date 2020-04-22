@@ -146,3 +146,31 @@ capitulation::plot_rK_age(data_prediction_augm2)
 capitulation::plot_gini(data_prediction_augm2,
                         vars = c("revenu","wealth","Y")
 )
+
+
+LC1 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$wealth, plot = FALSE)
+LC2 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$revenu, plot = FALSE)
+
+plot(LC1)
+lines(LC2, col=4)
+
+df <- data.frame(p1 = LC1$p,
+                 wealth = LC1$L,
+                 uniform = LC1$p, 
+                 y = LC2$L)
+df <- data.table::data.table(reshape2::melt(df, id.vars = "p1"))
+
+df[, 'lab' := "Pure equality"]
+df[variable == "wealth", lab := "Wealth"]
+df[variable == "y", lab := "Labor income"]
+
+
+p <- ggplot2::ggplot(df) +
+  ggplot2::geom_line(ggplot2::aes(x = p1, y = value, color = lab))+
+  ggplot2::theme(legend.position="bottom") +
+  ggplot2::scale_color_viridis_d() +
+  ggplot2::labs(x = "", y = "", color = "") +
+  ggplot2::theme(text = ggplot2::element_text(size=24),
+                 axis.title = ggplot2::element_text(size=20,face="bold"))
+
+p
