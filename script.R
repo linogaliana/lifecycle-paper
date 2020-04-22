@@ -107,57 +107,42 @@ EP_lon <- wealthyR::longitudinal_survey(macro = macro,
 
 
 menages_structural2 <- data.table::copy(data_prediction)
+menages_structural2[,'hg' := get('H_given')]
+menages_structural2[,'hr' := get('H_received')]
+
+# output <- wealthyR::estimation_theta(
+#   theta_0 = c("beta" = 0.9,
+#               "gamma" = 0.5),
+#   model_function = wealthyR:::loss_function,
+#   prediction_function = wealthyR:::model_capitulation,
+#   method = "one_step",
+#   r = 0.03,
+#   EP_2015 = EP_2015,
+#   EP_lon = EP_lon,
+#   EP_2018 = EP_2018,
+#   data_microsimulated = menages_structural2,
+#   N_moments = 26L,
+#   scale = "log",
+#   verbose = TRUE,
+#   Hgiven_var = "hg",
+#   Hreceived_var = "hr")
+
+data_prediction_augm2 <- capitulation::life_cycle_model(menages_structural2,
+                                                        wealthvar_survey = "K_observed",
+                                                        r = 0.03,
+                                                        beta = 0.9504511,
+                                                        gamma = 0.6731211,
+                                                        observation_year = 2009,
+                                                        income_var = "revenu",
+                                                        Hgiven_var = "hg",
+                                                        Hreceived_var = "hr",
+                                                        return_last = FALSE,
+                                                        get_capital_income = TRUE)
 
 
-menages_structural2[,c("H_given","H_received") := NULL]
+capitulation::plot_K_age(data_prediction_augm2)
+capitulation::plot_rK_age(data_prediction_augm2)
 
-# NO INHERITANCE
-output <- wealthyR::estimation_theta(
-  theta_0 = c("beta" = 0.9,
-              "gamma" = 0.5),
-  model_function = wealthyR:::loss_function,
-  prediction_function = wealthyR:::model_capitulation,
-  method = "one_step",
-  r = 0.03,
-  EP_2015 = EP_2015,
-  EP_lon = EP_lon,
-  EP_2018 = EP_2018,
-  data_microsimulated = menages_structural2,
-  N_moments = 26L,
-  scale = "log",
-  verbose = TRUE,
-  Hgiven_var = "H_given",
-  Hreceived_var = "H_received")
-
-menages_structural2 <- data.table::copy(data_prediction)
-
-output <- wealthyR::estimation_theta(
-  theta_0 = c("beta" = 0.9,
-              "gamma" = 0.5),
-  model_function = wealthyR:::loss_function,
-  prediction_function = wealthyR:::model_capitulation,
-  method = "one_step",
-  r = 0.03,
-  EP_2015 = EP_2015,
-  EP_lon = EP_lon,
-  EP_2018 = EP_2018,
-  data_microsimulated = menages_structural2,
-  N_moments = 26L,
-  scale = "log",
-  verbose = TRUE,
-  Hgiven_var = "H_given",
-  Hreceived_var = "H_received")
-
-system.time(
-  wealthyR:::model_capitulation(c("beta" = 0.9,
-                             "gamma" = 0.5),
-                           r = 0.03,
-                           EP_2015 = EP_2015,
-                           EP_lon = EP_lon,
-                           EP_2018 = EP_2018,
-                           data_microsimulated = menages_structural2,
-                           N_moments = 26L,
-                           scale = "log",
-                           verbose = FALSE
-                           )
+capitulation::plot_gini(data_prediction_augm2,
+                        vars = c("revenu","wealth","Y")
 )
