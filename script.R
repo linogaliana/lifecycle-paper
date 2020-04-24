@@ -6,12 +6,12 @@
 
 library(tablelight)
 
-aws.s3::save_object(object = "Destinie.zip", bucket = "groupe-788",
-                    file = "~/Destinie.zip")
-
-
-aws.s3::save_object(object = "Enquete Patrimoine.zip", bucket = "groupe-788",
-                    file = "~/Enquete Patrimoine.zip")
+# aws.s3::save_object(object = "Destinie.zip", bucket = "groupe-788",
+#                     file = "~/Destinie.zip")
+# 
+# 
+# aws.s3::save_object(object = "Enquete Patrimoine.zip", bucket = "groupe-788",
+#                     file = "~/Enquete Patrimoine.zip")
 
 
 unzip("~/Destinie.zip", exdir="~")
