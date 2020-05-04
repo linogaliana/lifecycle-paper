@@ -28,7 +28,7 @@ label_moments <- function(N_moments = 26L,
     Nmoment = 2L,
     scale = scale2,
     year = paste0(survey_years[1],"-",survey_years[2]),
-    champs = ages
+    champs = paste0(min(ages), "-", max(ages))
   )
   
   

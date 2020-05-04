@@ -34,7 +34,7 @@ EP_lon <- data[['EP_lon']]
 list2env(params$parameters_estimation, envir = .GlobalEnv)
 source("liste_moments.R")
 
-if (!is.null(number_moments)){
+if (!is.null(select_moments)){
   number_moments <- length(1:number_moments[1:number_moments %in% select_moments])
 } else{
   number_moments <- number_moments
