@@ -113,44 +113,63 @@ menages_structural2 <- data.table::copy(data_prediction)
 menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
 
-# output <- wealthyR::estimation_theta(
-#   theta_0 = c("beta" = 0.9,
-#               "gamma" = 0.5),
-#   model_function = wealthyR:::loss_function,
-#   prediction_function = wealthyR:::model_capitulation,
-#   method = "one_step",
-#   r = 0.03,
-#   EP_2015 = EP_2015,
-#   EP_lon = EP_lon,
-#   EP_2018 = EP_2018,
-#   data_microsimulated = menages_structural2,
-#   N_moments = 26L,
-#   scale = "log",
-#   verbose = TRUE,
-#   Hgiven_var = "hg",
-#   Hreceived_var = "hr")
+
+number_moments <- 26L
+scale_wealth <- "log"
+select_moments <- NULL
+parameters_estimation <- list("number_moments" = number_moments,
+                              "scale_wealth" = scale_wealth,
+                              "select_moments" = select_moments)
+  
+output <- wealthyR::estimation_theta(
+  theta_0 = c("beta" = 0.9,
+              "gamma" = 0.5),
+  model_function = wealthyR:::loss_function,
+  prediction_function = wealthyR:::model_capitulation,
+  method = "two_step",
+  select_moments = select_moments,
+  r = 0.03,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = number_moments,
+  scale = scale_wealth,
+  verbose = TRUE,
+  Hgiven_var = "hg",
+  Hreceived_var = "hr")
 
 saveRDS(
   menages_structural2, file = "tempfile.rds"
 )
 
-data_prediction_augm2 <- capitulation::life_cycle_model(menages_structural2,
-                                                        wealthvar_survey = "K_observed",
-                                                        r = 0.03,
-                                                        beta = 0.9504511,
-                                                        gamma = 0.6731211,
-                                                        observation_year = 2009,
-                                                        income_var = "revenu",
-                                                        Hgiven_var = "hg",
-                                                        Hreceived_var = "hr",
-                                                        return_last = FALSE,
-                                                        get_capital_income = TRUE)
-
+# data_prediction_augm2 <- capitulation::life_cycle_model(menages_structural2,
+#                                                         wealthvar_survey = "K_observed",
+#                                                         r = 0.03,
+#                                                         beta = 0.9504511,
+#                                                         gamma = 0.6731211,
+#                                                         observation_year = 2009,
+#                                                         income_var = "revenu",
+#                                                         Hgiven_var = "hg",
+#                                                         Hreceived_var = "hr",
+#                                                         return_last = FALSE,
+#                                                         get_capital_income = TRUE)
+# 
+# 
+# rmarkdown::render('automatic_report.Rmd',
+#                   params = list('r' = 0.03,
+#                                 'beta' = 0.9504511,
+#                                 'gamma' = 0.6731211
+#                                 )
+# )
 
 rmarkdown::render('automatic_report.Rmd',
                   params = list('r' = 0.03,
-                                'beta' = 0.9504511,
-                                'gamma' = 0.6731211
-                                )
+                                'beta' = 0.95,
+                                'gamma' = 0.5,
+                                "parameters_estimation" = parameters_estimation
+                  )
 )
-                  
+
+
+

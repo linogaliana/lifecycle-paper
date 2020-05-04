@@ -10,6 +10,8 @@ params:
   beta: 0.98
   gamma: 0.5
   r: 0.03
+  Nmoments: 3
+  parameters_estimation: list()
 ---
 
 ```{r setup, include=FALSE}
@@ -24,6 +26,14 @@ gamma <- params$gamma
 
 model <- readRDS("modele.rds")
 population <- readRDS("tempfile.rds")
+list2env(params$parameters_estimation, envir = .GlobalEnv)
+source("liste_moments.R")
+
+if (!is.null(select_moments)){
+  number_moments <- length(1:N_moments[1:N_moments %in% select_moments])
+} else{
+  number_moments <- N_moments
+}
 ```
 
 # Prolégomènes
@@ -33,6 +43,20 @@ Valeur des paramètres:
 * r: `r r`
 * gamma: `r gamma`
 * beta: `r beta`
+* Nmoments: `r number_moments`
+
+Moments sélectionnés:
+
+```{r}
+knitr::kable(
+  label_moments(
+    N_moments = number_moments,
+    scale = scale,
+    select_moments = select_moments
+  )
+)
+```
+
 
 Modèle d'héritage:
 
