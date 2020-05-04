@@ -10,8 +10,7 @@ params:
   beta: 0.98
   gamma: 0.5
   r: 0.03
-  Nmoments: 3
-  parameters_estimation: list()
+  N_moments: 6
 ---
 
 ```{r setup, include=FALSE}
@@ -24,7 +23,6 @@ r <- params$r
 beta <- params$beta
 gamma <- params$gamma
 
-model <- readRDS("modele.rds")
 population <- readRDS("tempfile.rds")
 data <- readRDS("data.rds")
 EP_2015 <- data[['EP_2015']]
@@ -39,49 +37,8 @@ Valeur des paramètres:
 * r: `r r`
 * gamma: `r gamma`
 * beta: `r beta`
-* Nmoments: `r number_moments`
+* Number of moments: `r N_moments`
 
-Moments sélectionnés:
-
-```{r}
-
-df_moment <- wealthyR::loss_function(
-  prediction_function = wealthyR:::model_capitulation,
-  select_moments = select_moments,
-  theta = c('beta' = beta,
-            'gamma' = gamma,
-            "r" = r),
-  EP_2015 = EP_2015,
-  EP_lon = EP_lon,
-  EP_2018 = EP_2018,
-  data_microsimulated = menages_structural2,
-  N_moments = number_moments,
-  scale = scale_wealth,
-  Hgiven_var = "hg",
-  Hreceived_var = "hr",
-  return_moment = TRUE
-)
-
-
-knitr::kable(
-  label_moments(
-    N_moments = number_moments,
-    scale = scale,
-    select_moments = select_moments
-  )
-)
-```
-
-
-Modèle d'héritage:
-
-```{r}
-tf <- tempfile(fileext = ".html")
-writeLines(light_table(
-  model, type = "html"
-), tf)
-htmltools::includeHTML(tf)
-```
 
 # Estimation du modèle
 
@@ -93,9 +50,7 @@ data_prediction_augm2 <- capitulation::life_cycle_model(
   beta = beta,
   gamma = gamma,
   observation_year = 2009,
-  income_var = "revenu",
-  Hgiven_var = "hg",
-  Hreceived_var = "hr",
+  income_var = "y_indiv",
   return_last = FALSE,
   get_capital_income = TRUE)
 ```
@@ -112,13 +67,13 @@ capitulation::plot_rK_age(data_prediction_augm2)
 
 ```{r}
 capitulation::plot_gini(data_prediction_augm2,
-                        vars = c("revenu", "wealth", "Y"))
+                        vars = c("y_indiv", "wealth", "Y"))
 ```
 
 
 ```{r}
 LC1 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$wealth, plot = FALSE)
-LC2 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$revenu, plot = FALSE)
+LC2 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$y_indiv, plot = FALSE)
 df <- data.frame(p1 = LC1$p,
                  wealth = LC1$L,
                  uniform = LC1$p, 
@@ -140,3 +95,5 @@ p <- ggplot2::ggplot(df) +
 
 p
 ```
+
+
