@@ -29,10 +29,10 @@ population <- readRDS("tempfile.rds")
 list2env(params$parameters_estimation, envir = .GlobalEnv)
 source("liste_moments.R")
 
-if (!is.null(select_moments)){
-  number_moments <- length(1:N_moments[1:N_moments %in% select_moments])
+if (!is.null(number_moments)){
+  number_moments <- length(1:number_moments[1:number_moments %in% select_moments])
 } else{
-  number_moments <- N_moments
+  number_moments <- number_moments
 }
 ```
 
@@ -48,6 +48,25 @@ Valeur des paramètres:
 Moments sélectionnés:
 
 ```{r}
+
+df_moment <- wealthyR::loss_function(
+  prediction_function = wealthyR:::model_capitulation,
+  select_moments = select_moments,
+  theta = c('beta' = beta,
+            'gamma' = gamma,
+            "r" = r),
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = number_moments,
+  scale = scale_wealth,
+  Hgiven_var = "hg",
+  Hreceived_var = "hr",
+  return_moment = TRUE
+)
+
+
 knitr::kable(
   label_moments(
     N_moments = number_moments,

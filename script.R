@@ -114,19 +114,23 @@ menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
 
 
-number_moments <- 26L
+# ESTIMATION ---------------
+
+number_moments <- 3L
 scale_wealth <- "log"
 select_moments <- NULL
+estimation_method <- "two_step"
 parameters_estimation <- list("number_moments" = number_moments,
                               "scale_wealth" = scale_wealth,
-                              "select_moments" = select_moments)
+                              "select_moments" = select_moments,
+                              "method" = estimation_method)
   
 output <- wealthyR::estimation_theta(
   theta_0 = c("beta" = 0.9,
               "gamma" = 0.5),
   model_function = wealthyR:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
-  method = "two_step",
+  method = estimation_method,
   select_moments = select_moments,
   r = 0.03,
   EP_2015 = EP_2015,
@@ -142,6 +146,18 @@ output <- wealthyR::estimation_theta(
 saveRDS(
   menages_structural2, file = "tempfile.rds"
 )
+
+
+rmarkdown::render('automatic_report.Rmd',
+                  params = list('r' = 0.03,
+                                'beta' = output$estimates$theta_hat['beta'],
+                                'gamma' = output$estimates$theta_hat['gamma'],
+                                "parameters_estimation" = parameters_estimation
+                  )
+)
+
+
+
 
 # data_prediction_augm2 <- capitulation::life_cycle_model(menages_structural2,
 #                                                         wealthvar_survey = "K_observed",
@@ -162,14 +178,3 @@ saveRDS(
 #                                 'gamma' = 0.6731211
 #                                 )
 # )
-
-rmarkdown::render('automatic_report.Rmd',
-                  params = list('r' = 0.03,
-                                'beta' = 0.95,
-                                'gamma' = 0.5,
-                                "parameters_estimation" = parameters_estimation
-                  )
-)
-
-
-
