@@ -144,7 +144,8 @@ saveRDS(
 )
 
 
-rmarkdown::render('trois_moments.Rmd',
+rmarkdown::render('automatic_report.Rmd',
+                  output_file = "trois_moments",
                   params = list('r' = 0.03,
                                 'beta' = output$estimates$theta_hat['beta'],
                                 'gamma' = output$estimates$theta_hat['gamma'],
