@@ -27,7 +27,7 @@ label_moments <- function(N_moments = 26L,
     label = "Médiane de la variation de la richesse individuelle",
     Nmoment = 2L,
     scale = scale2,
-    year = paste(survey_years[1], survey_years[2], collapse = "-"),
+    year = paste0(survey_years[1],"-",survey_years[2]),
     champs = ages
   )
   

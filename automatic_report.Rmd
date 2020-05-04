@@ -30,6 +30,15 @@ data <- readRDS("data.rds")
 EP_2015 <- data[['EP_2015']]
 EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
+
+list2env(params$parameters_estimation, envir = .GlobalEnv)
+source("liste_moments.R")
+
+if (!is.null(number_moments)){
+  number_moments <- length(1:number_moments[1:number_moments %in% select_moments])
+} else{
+  number_moments <- number_moments
+}
 ```
 
 # Prolégomènes
@@ -62,14 +71,16 @@ df_moment <- wealthyR::loss_function(
   return_moment = TRUE
 )
 
-
-knitr::kable(
-  label_moments(
+labelized_moments <-  label_moments(
     N_moments = number_moments,
     scale = scale,
     select_moments = select_moments
   )
-)
+
+
+knitr::kable(
+  merge(labelized_moments, df_moment, by = "Nmoment")
+             )
 ```
 
 
