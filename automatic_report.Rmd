@@ -63,7 +63,7 @@ df_moment <- wealthyR::loss_function(
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
-  data_microsimulated = menages_structural2,
+  data_microsimulated = population,
   N_moments = number_moments,
   scale = scale_wealth,
   Hgiven_var = "hg",
@@ -73,7 +73,7 @@ df_moment <- wealthyR::loss_function(
 
 labelized_moments <-  label_moments(
     N_moments = number_moments,
-    scale = scale,
+    scale = scale_wealth,
     select_moments = select_moments
   )
 
@@ -150,4 +150,39 @@ p <- ggplot2::ggplot(df) +
                  axis.title = ggplot2::element_text(size=20,face="bold"))
 
 p
+```
+
+
+# Graphs pour évaluer la qualité du fit
+
+Se référer au tableau pour les moments inclus dans l'analyse. 
+
+* Moments 1 et 3:
+
+```{r}
+wealthyR::plot_moment_pic(EP_2015 = EP_2015,
+                EP_2018 = EP_2018,
+                simulations = simulations,
+                scale = "log")
+```
+
+
+* Moment 2:
+
+```{r}
+wealthyR::plot_moment_dK(
+  EP_lon = EP_lon, simulations = simulations,
+  scale = "level"
+)
+```
+
+* Moments sur la distribution par âge du patrimoine (number ???):
+
+```{r}
+wealthyR::plot_moment_age_multiple(
+  EP_2015 = EP_2015,
+  EP_2018 = EP_2018,
+  simulations = simulations,
+  scale = "level"
+)
 ```
