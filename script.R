@@ -1,17 +1,7 @@
-# install.packages("RcppEigen")
-# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/retage", upgrade = "never")
-# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/capitulation", upgrade = "never")
-# devtools::install_git("https://git.stable.innovation.insee.eu/microsimulation/wealthyr", upgrade = "never")
-# devtools::install_github("linogaliana/tablelight", upgrade = "never")
-
 library(tablelight)
 
-# aws.s3::save_object(object = "Destinie.zip", bucket = "groupe-788",
-#                     file = "~/Destinie.zip")
-# 
-# 
-# aws.s3::save_object(object = "Enquete Patrimoine.zip", bucket = "groupe-788",
-#                     file = "~/Enquete Patrimoine.zip")
+N_moments = 6L
+
 
 
 unzip("~/Destinie.zip", exdir="~")
@@ -65,9 +55,7 @@ aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
                bucket = "groupe-788")
 
 
-# load(paste0(path_data, "/individual_data2.RData"))
 
-# menages_structural <- data.table::rbindlist(menages_structural)
 
 
 macro <- capitulation::macro
@@ -109,6 +97,14 @@ EP_lon <- wealthyR::longitudinal_survey(macro = macro,
                                         EP_2018 = EP_2018)
 
 
+data <- list(
+  'EP_2015' = EP_2015,
+  'EP_2018' = EP_2018,
+  'EP_lon' = EP_lon
+)
+saveRDS(data, "data.rds")
+
+
 menages_structural2 <- data.table::copy(data_prediction)
 menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
@@ -144,7 +140,7 @@ output <- wealthyR::estimation_theta(
   Hreceived_var = "hr")
 
 saveRDS(
-  menages_structural2, file = "tempfile.rds"
+  menages_structural, file = "tempfile.rds"
 )
 
 
