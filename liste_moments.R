@@ -49,7 +49,7 @@ label_moments <- function(N_moments = 26L,
   
   moments_wave1 <- data.frame(
     label = paste0("Richesse en coupe: ", stats),
-    Nmoment = 4L + 1:length(stats),
+    Nmoment = 3L + 1:length(stats),
     scale = scale,
     year = survey_years[1],
     champs = "Toute population"

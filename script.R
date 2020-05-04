@@ -112,7 +112,7 @@ menages_structural2[,'hr' := get('H_received')]
 
 # ESTIMATION ---------------
 
-number_moments <- 3L
+number_moments <- 4L
 scale_wealth <- "log"
 select_moments <- NULL
 estimation_method <- "two_step"
@@ -140,12 +140,12 @@ output <- wealthyR::estimation_theta(
   Hreceived_var = "hr")
 
 saveRDS(
-  menages_structural, file = "tempfile.rds"
+  menages_structural2, file = "tempfile.rds"
 )
 
 
 rmarkdown::render('automatic_report.Rmd',
-                  output_file = "trois_moments",
+                  output_file = "quatre_moments",
                   params = list('r' = 0.03,
                                 'beta' = output$estimates$theta_hat['beta'],
                                 'gamma' = output$estimates$theta_hat['gamma'],
