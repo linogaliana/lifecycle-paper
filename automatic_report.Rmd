@@ -186,3 +186,32 @@ wealthyR::plot_moment_age_multiple(
   scale = "level"
 )
 ```
+
+
+# Distribution des K0
+
+Histogramme des K0:
+
+```{r}
+K0 <- simulations[order(Id,annee)][,.SD[1], by = "Id"]
+ggplot2::ggplot(simulations) +
+  ggplot2::geom_histogram(
+    ggplot2::aes(x = log(wealth), y = ..density..,
+        fill = (annee>2009)), alpha = 0.4, position = "identity"
+  ) +
+  ggplot2::scale_fill_viridis_d()
+```
+
+Et la distribution sous-jacente:
+
+```{r}
+stats_desc <- function(x){
+  return(c(mean(x), sd(x), quantile(x, p = c(.25,.5,.75,.9))))
+}
+K0[,'cohorte' := ifelse(annee>2009, "Après 2009", "Avant 2009")]
+stats_K <- K0[,.(K = stats_desc(wealth)),
+      by = "cohorte"]
+stats_K[,stat := c("mean","sd",
+         paste0("p",c(25,50,75, 90))), by = "cohorte"]
+data.table::dcast(stats_K, cohorte ~ ..., value.var = "K")
+```
