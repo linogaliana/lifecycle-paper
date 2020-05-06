@@ -213,5 +213,6 @@ stats_K <- K0[,.(K = stats_desc(wealth)),
       by = "cohorte"]
 stats_K[,stat := c("mean","sd",
          paste0("p",c(25,50,75, 90))), by = "cohorte"]
+stats_K[,'K' := format(round(get('K')), big.mark = ",")]
 data.table::dcast(stats_K, cohorte ~ ..., value.var = "K")
 ```
