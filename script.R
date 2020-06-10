@@ -112,7 +112,7 @@ menages_structural2[,'hr' := get('H_received')]
 
 # ESTIMATION ---------------
 
-number_moments <- 4L
+number_moments <- 3L
 scale_wealth <- "log"
 select_moments <- NULL
 estimation_method <- "two_step"
@@ -133,7 +133,7 @@ output <- wealthyR::estimation_theta(
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
   data_microsimulated = menages_structural2,
-  N_moments = number_moments,
+  N_moments = 3L,
   scale = scale_wealth,
   verbose = TRUE,
   Hgiven_var = "hg",
@@ -145,16 +145,16 @@ saveRDS(
 
 
 rmarkdown::render('automatic_report.Rmd',
-                  output_file = "quatre_moments",
+                  output_file = "trois_moments_deux_param",
                   params = list('r' = 0.03,
                                 'beta' = output$estimates$theta_hat['beta'],
                                 'gamma' = output$estimates$theta_hat['gamma'],
                                 "parameters_estimation" = parameters_estimation
                   )
 )
+  
 
-
-
+ 
 
 # data_prediction_augm2 <- capitulation::life_cycle_model(menages_structural2,
 #                                                         wealthvar_survey = "K_observed",

@@ -1,7 +1,7 @@
 ---
 title: "Résultats générés automatiquement"
 author: "Lino"
-date: "22/04/2020"
+date: "`r format(Sys.Date(), format = '%d %B %Y')`"
 output:
   html_document:
   fig_width: 16 
@@ -55,6 +55,7 @@ Moments sélectionnés:
 ```{r}
 
 df_moment <- wealthyR::loss_function(
+  match_call = TRUE,
   prediction_function = wealthyR:::model_capitulation,
   select_moments = select_moments,
   theta = c('beta' = beta,
@@ -162,7 +163,7 @@ Se référer au tableau pour les moments inclus dans l'analyse.
 ```{r}
 wealthyR::plot_moment_pic(EP_2015 = EP_2015,
                 EP_2018 = EP_2018,
-                simulations = simulations,
+                simulations = data_prediction_augm2,
                 scale = "log")
 ```
 
@@ -171,7 +172,7 @@ wealthyR::plot_moment_pic(EP_2015 = EP_2015,
 
 ```{r}
 wealthyR::plot_moment_dK(
-  EP_lon = EP_lon, simulations = simulations,
+  EP_lon = EP_lon, simulations = data_prediction_augm2,
   scale = "level"
 )
 ```
@@ -182,7 +183,7 @@ wealthyR::plot_moment_dK(
 wealthyR::plot_moment_age_multiple(
   EP_2015 = EP_2015,
   EP_2018 = EP_2018,
-  simulations = simulations,
+  simulations = data_prediction_augm2,
   scale = "level"
 )
 ```
@@ -193,8 +194,8 @@ wealthyR::plot_moment_age_multiple(
 Histogramme des K0:
 
 ```{r}
-K0 <- simulations[order(Id,annee)][,.SD[1], by = "Id"]
-ggplot2::ggplot(simulations) +
+K0 <- data_prediction_augm2[order(Id,annee)][,.SD[1], by = "Id"]
+ggplot2::ggplot(K0) +
   ggplot2::geom_histogram(
     ggplot2::aes(x = log(wealth), y = ..density..,
         fill = (annee>2009)), alpha = 0.4, position = "identity"
