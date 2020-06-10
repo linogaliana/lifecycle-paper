@@ -53,7 +53,6 @@ Valeur des paramètres:
 Moments sélectionnés:
 
 ```{r}
-
 df_moment <- wealthyR::loss_function(
   match_call = TRUE,
   prediction_function = wealthyR:::model_capitulation,
