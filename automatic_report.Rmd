@@ -54,12 +54,12 @@ Moments sélectionnés:
 
 ```{r}
 df_moment <- wealthyR::loss_function(
-  match_call = TRUE,
+#  match_call = TRUE,
   prediction_function = wealthyR:::model_capitulation,
   select_moments = select_moments,
-  theta = c('beta' = beta,
-            'gamma' = gamma,
-            "r" = r),
+  theta = c('beta' = as.numeric(beta),
+            'gamma' = as.numeric(gamma),
+            "r" = as.numeric(r)),
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
