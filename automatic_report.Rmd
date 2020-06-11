@@ -172,7 +172,7 @@ wealthyR::plot_moment_pic(EP_2015 = EP_2015,
 ```{r}
 wealthyR::plot_moment_dK(
   EP_lon = EP_lon, simulations = data_prediction_augm2,
-  scale = "level"
+  scale = "log"
 )
 ```
 
