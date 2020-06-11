@@ -63,7 +63,7 @@ df_moment <- wealthyR::loss_function(
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
-  data_microsimulated = population,
+  data_microsimulated = data.table::copy(population),
   N_moments = number_moments,
   scale = scale_wealth,
   Hgiven_var = "hg",

@@ -146,6 +146,7 @@ saveRDS(
 
 rmarkdown::render('automatic_report.Rmd',
                   output_file = "trois_moments_deux_param",
+                  envir = new.env(),
                   params = list('r' = 0.03,
                                 'beta' = output$estimates$theta_hat['beta'],
                                 'gamma' = output$estimates$theta_hat['gamma'],
