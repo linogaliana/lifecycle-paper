@@ -30,7 +30,7 @@ estim_data <- estim_data[order(MTHER)]
 inheritance_model <- REtage::ordered_model_threshold(
   data = data.frame(estim_data[order(MTHER)]),
   formula = "MTHER ~ lw",
-  link = "probit",
+  link = "logit",
   constantSD = TRUE,
   thresholds = lbounds
 )
