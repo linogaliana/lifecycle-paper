@@ -3,6 +3,8 @@
 .Rproj.user
 README.html
 
+*.html
+
 *.zip
 *.rds
 inst/*
