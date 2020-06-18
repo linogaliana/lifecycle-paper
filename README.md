@@ -29,4 +29,7 @@ Le coeur du projet contient trois :package:
 
 ## Packages annexes
 
+Les packages suivants sont utilisés:
 
+* [oglm](https://github.com/linogaliana/oglm.git): une adaptation personnelle du package [oglmx](https://cran.r-project.org/web/packages/oglmx/index.html) pour lequel on trouve de la documentation [ici](https://cran.r-project.org/web/packages/oglmx/vignettes/oglmxVignette.pdf). Le package `oglmx` étant incomplet (il manque notamment une fonction `predict`), j'ai commencé à ajouter des fonctionnalités à celui-ci
+* [tablelight](https://github.com/linogaliana/tablelight): un package pour avoir des tableaux de régression. `stargazer`, le package de référence dans le domaine, fonctionne mal avec les modèles de type `oglm` ; j'ai donc eu besoin d'un autre package pour faire des tableaux de résultats
