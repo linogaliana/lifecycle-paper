@@ -23,9 +23,9 @@ Pour faciliter le traitement, une image `docker` prête à l'emploi a été cré
 
 Le coeur du projet contient trois :package:
 
-1. `REtage` ([code source]([git@git.stable.innovation.insee.eu:22222]:microsimulation/retage.git)): un module pour structurer des données d'héritage et construire le modèle. Ce package utilise, pour l'estimation, le package [oglm](https://github.com/linogaliana/oglm) (cf. Section *Packages annexes*)
-2. `wealthyR` ([code source]([git@git.stable.innovation.insee.eu:22222]:microsimulation/wealthyr.git)): un module pour traiter les données de l'enquête patrimoine (calculer des moments dessus notamment) et estimer un modèle par GMM/MD (cette partie du :package: sera bientôt isolée dans un :package: spécifique)
-3. `capitulation` ([code source]([git@git.stable.innovation.insee.eu:22222]:microsimulation/capitulation.git)): un package pour construire un modèle de microsimulation avec une approche de cycle de vie
+1. `REtage` ([code source](https://git.stable.innovation.insee.eu/microsimulation/misc/retage)): un module pour structurer des données d'héritage et construire le modèle. Ce package utilise, pour l'estimation, le package [oglm](https://github.com/linogaliana/oglm) (cf. Section *Packages annexes*)
+2. `wealthyR` ([code source](https://git.stable.innovation.insee.eu/microsimulation/misc/wealthyr)): un module pour traiter les données de l'enquête patrimoine (calculer des moments dessus notamment) et estimer un modèle par GMM/MD (cette partie du :package: sera bientôt isolée dans un :package: spécifique)
+3. `capitulation` ([code source](https://git.stable.innovation.insee.eu/microsimulation/misc/capitulation)): un package pour construire un modèle de microsimulation de patrimoine (*capit(al) (sim)ulation*) avec une approche de cycle de vie
 
 ## Packages annexes
 
