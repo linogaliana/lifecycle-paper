@@ -1,6 +1,5 @@
 library(tablelight)
 
-N_moments = 6L
 
 
 
@@ -25,12 +24,13 @@ estim_data <- inheritance_data[get('revenu')>0]
 
 estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
 estim_data <- estim_data[order(MTHER)]
-
+estim_data[,'age' := get('AGE')]
+# estim_data[,'findet' := get('AGFINETU')]
 
 inheritance_model <- REtage::ordered_model_threshold(
   data = data.frame(estim_data[order(MTHER)]),
-  formula = "MTHER ~ lw",
-  link = "logit",
+  formula = "MTHER ~ lw + age + I((age^2)/100) + AGFINETU + I((AGFINETU^2)/100)",
+  link = "probit",
   constantSD = TRUE,
   thresholds = lbounds
 )
@@ -50,6 +50,7 @@ data_prediction <- capitulation::prepare_data(
   path_data = "~",
   inheritance_model = inheritance_model
 )
+
 
 aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
                bucket = "groupe-788")
@@ -112,7 +113,7 @@ menages_structural2[,'hr' := get('H_received')]
 
 # ESTIMATION ---------------
 
-number_moments <- 3L
+number_moments <- 4L
 scale_wealth <- "log"
 select_moments <- NULL
 estimation_method <- "two_step"
@@ -145,7 +146,7 @@ saveRDS(
 
 
 rmarkdown::render('automatic_report.Rmd',
-                  output_file = "trois_moments_deux_param",
+                  output_file = "probit_age_quatre_moments_deux_param",
                   envir = new.env(),
                   params = list('r' = 0.03,
                                 'beta' = output$estimates$theta_hat['beta'],

@@ -23,7 +23,8 @@ library(tablelight)
 r <- params$r
 beta <- params$beta
 gamma <- params$gamma
-
+delta <- 1/beta - 1
+  
 model <- readRDS("modele.rds")
 population <- readRDS("tempfile.rds")
 data <- readRDS("data.rds")
@@ -49,6 +50,8 @@ Valeur des paramètres:
 * gamma: `r gamma`
 * beta: `r beta`
 * Nmoments: `r number_moments`
+
+Et donc delta: `r delta`
 
 Moments sélectionnés:
 
