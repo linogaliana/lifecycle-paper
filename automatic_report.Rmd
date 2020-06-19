@@ -12,6 +12,7 @@ params:
   r: 0.03
   Nmoments: 3
   parameters_estimation: list()
+  estimates: list() 
 ---
 
 ```{r setup, include=FALSE}
@@ -97,7 +98,13 @@ writeLines(light_table(
 htmltools::includeHTML(tf)
 ```
 
-# Estimation du modèle
+# Estimation
+
+```{r}
+params$estimates
+```
+
+# Prédiction du modèle
 
 ```{r, echo = TRUE}
 data_prediction_augm2 <- capitulation::life_cycle_model(

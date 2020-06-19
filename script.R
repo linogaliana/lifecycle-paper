@@ -53,7 +53,7 @@ data_prediction <- capitulation::prepare_data(
 
 
 aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
-               bucket = "groupe-788")
+                  bucket = "groupe-788")
 
 
 
@@ -113,7 +113,7 @@ menages_structural2[,'hr' := get('H_received')]
 
 # ESTIMATION ---------------
 
-number_moments <- 4L
+number_moments <- 3L
 scale_wealth <- "log"
 select_moments <- NULL
 estimation_method <- "two_step"
@@ -121,15 +121,16 @@ parameters_estimation <- list("number_moments" = number_moments,
                               "scale_wealth" = scale_wealth,
                               "select_moments" = select_moments,
                               "method" = estimation_method)
-  
+
 output <- wealthyR::estimation_theta(
   theta_0 = c("beta" = 0.9,
-              "gamma" = 0.5),
+              "gamma" = 0.5,
+              "r" = 0.03),
   model_function = wealthyR:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
   method = estimation_method,
   select_moments = select_moments,
-  r = 0.03,
+  # r = 0.03,
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
@@ -148,15 +149,16 @@ saveRDS(
 rmarkdown::render('automatic_report.Rmd',
                   output_file = "probit_age_quatre_moments_deux_param",
                   envir = new.env(),
-                  params = list('r' = 0.03,
+                  params = list('r' = output$estimates$theta_hat['r'],
                                 'beta' = output$estimates$theta_hat['beta'],
                                 'gamma' = output$estimates$theta_hat['gamma'],
+                                'estimates' = output$estimates,
                                 "parameters_estimation" = parameters_estimation
                   )
 )
-  
 
- 
+
+
 
 # data_prediction_augm2 <- capitulation::life_cycle_model(menages_structural2,
 #                                                         wealthvar_survey = "K_observed",
