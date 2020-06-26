@@ -8,3 +8,4 @@ README.html
 *.zip
 *.rds
 inst/*
+*.html
