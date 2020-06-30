@@ -1,4 +1,7 @@
+set.seed(12345)
+
 library(tablelight)
+
 
 
 
