@@ -99,6 +99,7 @@ EP_lon <- wealthyR::longitudinal_survey(macro = macro,
                                         path_data = path_data,
                                         EP_2015 = EP_2015,
                                         EP_2018 = EP_2018)
+EP_lon[,'tr_age_2015' := floor(get("AGEPR_2015")/5)*5]
 
 
 data <- list(
@@ -112,6 +113,7 @@ saveRDS(data, "data.rds")
 menages_structural2 <- data.table::copy(data_prediction)
 menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
+menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
 
 
 # ESTIMATION ---------------
@@ -150,15 +152,17 @@ saveRDS(
 )
 
 
-rmarkdown::render('automatic_report.Rmd',
-                  output_file = "probit_age_quatre_moments_deux_param",
-                  envir = new.env(),
-                  params = list('r' = output$estimates$theta_hat['r'],
-                                'beta' = output$estimates$theta_hat['beta'],
-                                'gamma' = output$estimates$theta_hat['gamma'],
-                                'estimates' = output$estimates,
-                                "parameters_estimation" = parameters_estimation
-                  )
+rmarkdown::render(
+  'automatic_report.Rmd',
+  output_file = "moments_age",
+  envir = new.env(),
+  params = list('r' = output$estimates$theta_hat['r'],
+                'beta' = output$estimates$theta_hat['beta'],
+                'gamma' = output$estimates$theta_hat['gamma'],
+                'estimates' = output$estimates,
+                "parameters_estimation" = parameters_estimation,
+                "moments" = output$moments
+  )
 )
 
 
@@ -183,3 +187,15 @@ rmarkdown::render('automatic_report.Rmd',
 #                                 'gamma' = 0.6731211
 #                                 )
 # )
+
+
+
+
+create_moment_data(
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = 4L,
+  by = "tr_age_2015"
+)

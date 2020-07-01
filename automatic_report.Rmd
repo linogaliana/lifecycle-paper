@@ -12,7 +12,8 @@ params:
   r: 0.03
   Nmoments: 3
   parameters_estimation: list()
-  estimates: list() 
+  estimates: list()
+  moments: list()
 ---
 
 ```{r setup, include=FALSE}
@@ -32,7 +33,7 @@ data <- readRDS("data.rds")
 EP_2015 <- data[['EP_2015']]
 EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
-
+moments <- params$moments
 list2env(params$parameters_estimation, envir = .GlobalEnv)
 source("liste_moments.R")
 
@@ -54,9 +55,11 @@ Valeur des paramètres:
 
 Et donc delta: `r delta`
 
+
 Moments sélectionnés:
 
 ```{r}
+# OLD
 df_moment <- wealthyR::loss_function(
 #  match_call = TRUE,
   prediction_function = wealthyR:::model_capitulation,
@@ -82,11 +85,14 @@ labelized_moments <-  label_moments(
   )
 
 
-knitr::kable(
-  merge(labelized_moments, df_moment, by = "Nmoment")
-             )
+#knitr::kable(
+#  merge(labelized_moments, df_moment, by = "Nmoment")
+#             )
 ```
 
+```{r}
+moments
+```
 
 Modèle d'héritage:
 
