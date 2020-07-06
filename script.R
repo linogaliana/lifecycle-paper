@@ -147,6 +147,14 @@ output <- wealthyR::estimation_theta(
   Hgiven_var = "hg",
   Hreceived_var = "hr")
 
+moments <- wealthyR:::label_moments(
+  N_moments = 6L,
+  data = EP_lon,
+  scale = scale_wealth,
+  select_moments = select_moments,
+  by = "tr_age_2015"
+)
+
 saveRDS(
   menages_structural2, file = "tempfile.rds"
 )
