@@ -114,7 +114,7 @@ knitr::kable(
 | Critère | Deuxième étape | Première étape |
 |---------|----------------|----------------|
 | $\epsilon'\epsilon$ | `r sum(moments$moment_optimum$epsilon^2)` | `r sum(moments$moment_first_step$epsilon^2)` |
-| $\epsilon' W \epsilon$ | `r output$NelderMead$NM_step2$value` | `rt(output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% output$moments$moment_first_step$epsilon` |
+| $\epsilon' W \epsilon$ | `r output$NelderMead$NM_step2$value` | `r t(output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% output$moments$moment_first_step$epsilon` |
 
 # Estimation
 

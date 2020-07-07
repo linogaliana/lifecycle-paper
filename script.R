@@ -178,6 +178,7 @@ rmarkdown::render(
 
 
 
+
 # data_prediction_augm2 <- capitulation::life_cycle_model(menages_structural2,
 #                                                         wealthvar_survey = "K_observed",
 #                                                         r = 0.03,
