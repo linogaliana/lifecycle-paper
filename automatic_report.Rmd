@@ -143,21 +143,21 @@ data_prediction_augm2 <- capitulation::life_cycle_model(
 
 # Résultats
 
-```{r}
+```{r Kage}
 capitulation::plot_K_age(data_prediction_augm2)
 ```
 
-```{r}
+```{r rKage}
 capitulation::plot_rK_age(data_prediction_augm2)
 ```
 
-```{r}
+```{r gini}
 capitulation::plot_gini(data_prediction_augm2,
                         vars = c("revenu", "wealth", "Y"))
 ```
 
 
-```{r gini}
+```{r }
 LC1 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$wealth, plot = FALSE)
 LC2 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$revenu, plot = FALSE)
 df <- data.frame(p1 = LC1$p,
