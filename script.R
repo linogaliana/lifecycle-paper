@@ -140,19 +140,19 @@ output <- wealthyR::estimation_theta(
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
   data_microsimulated = menages_structural2,
-  N_moments = 6L,
-  by = "tr_age_2015",
+  N_moments = 3L,
+  #by = "tr_age_2015",
   scale = scale_wealth,
   verbose = TRUE,
   Hgiven_var = "hg",
   Hreceived_var = "hr")
 
 moments <- wealthyR:::label_moments(
-  N_moments = 6L,
+  N_moments = 3L,
   data = EP_lon,
   scale = scale_wealth,
-  select_moments = select_moments,
-  by = "tr_age_2015"
+  select_moments = select_moments#,
+#  by = "tr_age_2015"
 )
 
 saveRDS(
@@ -169,7 +169,9 @@ rmarkdown::render(
                 'gamma' = output$estimates$theta_hat['gamma'],
                 'estimates' = output$estimates,
                 "parameters_estimation" = parameters_estimation,
-                "moments" = output$moments
+                "moments" = output$moments,
+                "label_moments" = moments,
+                "optim" = output$NelderMead
   )
 )
 

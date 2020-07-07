@@ -14,6 +14,8 @@ params:
   parameters_estimation: list()
   estimates: list()
   moments: list()
+  label_moments: data.frame()
+  optim: list()
 ---
 
 ```{r setup, include=FALSE}
@@ -35,6 +37,12 @@ EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
 moments <- params$moments
 list2env(params$parameters_estimation, envir = .GlobalEnv)
+
+output <- list(
+  "NelderMead" = params$optim,
+  "moments" = params$moments
+)
+
 source("liste_moments.R")
 
 if (!is.null(select_moments)){
@@ -56,7 +64,20 @@ Valeur des paramètres:
 Et donc delta: `r delta`
 
 
-Moments sélectionnés:
+
+
+# Modèle d'héritage
+
+```{r}
+tf <- tempfile(fileext = ".html")
+writeLines(light_table(
+  model, type = "html"
+), tf)
+htmltools::includeHTML(tf)
+```
+
+
+# Qualité estimation minimum distance
 
 ```{r}
 # OLD
@@ -78,37 +99,30 @@ df_moment <- wealthyR::loss_function(
   return_moment = TRUE
 )
 
-labelized_moments <-  label_moments(
-    N_moments = number_moments,
-    scale = scale_wealth,
-    select_moments = select_moments
-  )
-
-
-#knitr::kable(
-#  merge(labelized_moments, df_moment, by = "Nmoment")
-#             )
-```
-
-```{r}
 moments
 ```
 
-Modèle d'héritage:
+Moments sélectionnés:
 
-```{r}
-tf <- tempfile(fileext = ".html")
-writeLines(light_table(
-  model, type = "html"
-), tf)
-htmltools::includeHTML(tf)
+
+```{r labels}
+knitr::kable(
+  params$label_moments
+)
 ```
+
+| Critère | Deuxième étape | Première étape |
+|---------|----------------|----------------|
+| $\epsilon'\epsilon$ | `r sum(moments$moment_optimum$epsilon^2)` | `r sum(moments$moment_first_step$epsilon^2)` |
+| $\epsilon' W \epsilon$ | `r output$NelderMead$NM_step2$value` | `rt(output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% output$moments$moment_first_step$epsilon` |
 
 # Estimation
 
-```{r}
+```{r valparams}
 params$estimates
 ```
+
+
 
 # Prédiction du modèle
 
@@ -143,7 +157,7 @@ capitulation::plot_gini(data_prediction_augm2,
 ```
 
 
-```{r}
+```{r gini}
 LC1 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$wealth, plot = FALSE)
 LC2 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$revenu, plot = FALSE)
 df <- data.frame(p1 = LC1$p,
@@ -194,7 +208,7 @@ wealthyR::plot_moment_dK(
 
 * Moments sur la distribution par âge du patrimoine (number ???):
 
-```{r}
+```{r agemultiple}
 wealthyR::plot_moment_age_multiple(
   EP_2015 = EP_2015,
   EP_2018 = EP_2018,
