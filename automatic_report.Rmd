@@ -15,7 +15,7 @@ params:
   estimates: list()
   moments: list()
   label_moments: data.frame()
-  optim: list()
+  output: list()
 ---
 
 ```{r setup, include=FALSE}
@@ -38,10 +38,11 @@ EP_lon <- data[['EP_lon']]
 moments <- params$moments
 list2env(params$parameters_estimation, envir = .GlobalEnv)
 
-output <- list(
-  "NelderMead" = params$optim,
-  "moments" = params$moments
-)
+# output <- list(
+#   "NelderMead" = params$output,
+#   "moments" = params$moments
+# )
+output <- params$output
 
 source("liste_moments.R")
 
@@ -81,7 +82,7 @@ htmltools::includeHTML(tf)
 
 ```{r}
 # OLD
-df_moment <- wealthyR::loss_function(
+df_moment <- mindist::loss_function(
 #  match_call = TRUE,
   prediction_function = wealthyR:::model_capitulation,
   select_moments = select_moments,
@@ -115,8 +116,8 @@ knitr::kable(
 |---------|----------------|----------------|
 | $\epsilon'\epsilon$ | `r sum(moments$moment_optimum$epsilon^2)` | `r sum(moments$moment_first_step$epsilon^2)` |
 | $\epsilon' W \epsilon$ | `r output$NelderMead$NM_step2$value` | `r t(output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% output$moments$moment_first_step$epsilon` |
-| $Q(\theta) = \frac{1}{M^2} \epsilon' W \epsilon$ | `r output$NelderMead$NM_step2$value/length(moments$moment_optimum$epsilon)` |
-`r as.numeric(t(output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% output$moments$moment_first_step$epsilon)/length(moments$moment_optimum$epsilon)`
+| $Q(\theta) = \frac{1}{M^2} \epsilon' W \epsilon$ | `r output$NelderMead$NM_step2$value/length(output$moments$moment_optimum$epsilon)` | `r as.numeric(t(output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% output$moments$moment_first_step$epsilon)/length(output$moments$moment_optimum$epsilon)`
+
 
 # Estimation
 

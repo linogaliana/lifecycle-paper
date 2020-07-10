@@ -127,15 +127,16 @@ parameters_estimation <- list("number_moments" = number_moments,
                               "select_moments" = select_moments,
                               "method" = estimation_method)
 
-output <- wealthyR::estimation_theta(
+output <- mindist::estimation_theta(
   theta_0 = c("beta" = 0.9,
               "gamma" = 0.5,
-              "r" = 0.03),
-  model_function = wealthyR:::loss_function,
+              "r" = 0.03
+              ),
+  model_function = mindist:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
   method = estimation_method,
   select_moments = select_moments,
-  # r = 0.03,
+  #r = 0.03,
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
@@ -171,7 +172,7 @@ rmarkdown::render(
                 "parameters_estimation" = parameters_estimation,
                 "moments" = output$moments,
                 "label_moments" = moments,
-                "optim" = output$NelderMead
+                "output" = output
   )
 )
 
