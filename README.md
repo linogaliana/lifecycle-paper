@@ -7,7 +7,7 @@
 
 1. Lancer un service Rstudio avec [ce lien](https://onyxia.beta.innovation.insee.eu/my-lab/catalogue/inno/rstudio/deploiement?git.enable=true&rstudio.shiny=false&advanced.sudo=false&onyxia.friendly_name=microsimulation&service.mem=12096&rstudio.image_docker=git-registry.stable.innovation.insee.eu/microsimulation/microsimulationci). Le service s'affiche dans le tableau des services disponibles [ici](https://onyxia.beta.innovation.insee.eu/my-lab/mes-services). 
 
-2. Une fois le service démarré, il faut cloner ce dépôt en SSH. La démarche est expliquée *** avec l'adresse suivante <[git@git.stable.innovation.insee.eu:22222]:microsimulation/misc/estimation.git>
+2. Une fois le service démarré, il faut cloner ce dépôt en SSH. La démarche est expliquée *** avec l'adresse suivante `[git@git.stable.innovation.insee.eu:22222]:microsimulation/misc/estimation.git`
 
 3. Le script
 
