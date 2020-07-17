@@ -118,7 +118,7 @@ menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
 
 # ESTIMATION ---------------
 
-number_moments <- 3L
+number_moments <- 2L
 scale_wealth <- "log"
 select_moments <- NULL
 estimation_method <- "two_step"
@@ -127,21 +127,27 @@ parameters_estimation <- list("number_moments" = number_moments,
                               "select_moments" = select_moments,
                               "method" = estimation_method)
 
+beta <- 0.95
+r <- NULL
+gamma <- NULL
+
 output <- mindist::estimation_theta(
-  theta_0 = c("beta" = 0.9,
-              "gamma" = 0.5,
-              "r" = 0.03
+  theta_0 = c("beta" = {if(is.null(beta)) 0.9 else NULL},
+              "gamma" = {if(is.null(gamma)) 0.5 else NULL},
+              "r" = {if(is.null(r)) 0.03 else NULL}
               ),
+  beta = beta,
+  r = r,
+  gamma = gamma,
   model_function = mindist:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
   method = estimation_method,
   select_moments = select_moments,
-  #r = 0.03,
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
   data_microsimulated = menages_structural2,
-  N_moments = 3L,
+  N_moments = number_moments,
   #by = "tr_age_2015",
   scale = scale_wealth,
   verbose = TRUE,
@@ -149,7 +155,7 @@ output <- mindist::estimation_theta(
   Hreceived_var = "hr")
 
 moments <- wealthyR:::label_moments(
-  N_moments = 3L,
+  N_moments = number_moments,
   data = EP_lon,
   scale = scale_wealth,
   select_moments = select_moments#,
@@ -165,9 +171,9 @@ rmarkdown::render(
   'automatic_report.Rmd',
   output_file = "moments_age",
   envir = new.env(),
-  params = list('r' = output$estimates$theta_hat['r'],
-                'beta' = output$estimates$theta_hat['beta'],
-                'gamma' = output$estimates$theta_hat['gamma'],
+  params = list('r' = {if(is.null(r)) output$estimates$theta_hat['r'] else r},
+                'beta' = {if(is.null(beta)) output$estimates$theta_hat['beta'] else beta},
+                'gamma' = {if(is.null(gamma)) output$estimates$theta_hat['gamma'] else gamma},
                 'estimates' = output$estimates,
                 "parameters_estimation" = parameters_estimation,
                 "moments" = output$moments,
