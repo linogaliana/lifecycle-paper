@@ -150,6 +150,7 @@ output <- mindist::estimation_theta(
   N_moments = number_moments,
   #by = "tr_age_2015",
   scale = scale_wealth,
+  moments_weights = c(5, 2,3),
   verbose = TRUE,
   Hgiven_var = "hg",
   Hreceived_var = "hr")
