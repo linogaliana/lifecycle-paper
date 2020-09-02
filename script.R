@@ -131,6 +131,8 @@ beta <- 0.95
 r <- NULL
 gamma <- NULL
 
+menages_structural2[,'AGEPR' := age]
+
 output <- mindist::estimation_theta(
   theta_0 = c("beta" = {if(is.null(beta)) 0.9 else NULL},
               "gamma" = {if(is.null(gamma)) 0.5 else NULL},
@@ -147,10 +149,10 @@ output <- mindist::estimation_theta(
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
   data_microsimulated = menages_structural2,
-  N_moments = number_moments,
-  #by = "tr_age_2015",
+  N_moments = 180,
+  by = c("AGEPR", NA),
   scale = scale_wealth,
-  moments_weights = c(5, 2,3),
+  moments_weights = "weight",
   verbose = TRUE,
   Hgiven_var = "hg",
   Hreceived_var = "hr")
@@ -159,8 +161,8 @@ moments <- wealthyR:::label_moments(
   N_moments = number_moments,
   data = EP_lon,
   scale = scale_wealth,
-  select_moments = select_moments#,
-#  by = "tr_age_2015"
+  select_moments = select_moments,
+  by = c("AGEPR", NA)
 )
 
 saveRDS(
@@ -170,7 +172,7 @@ saveRDS(
 
 rmarkdown::render(
   'automatic_report.Rmd',
-  output_file = "moments_age",
+  output_file = "overidentification_moment1",
   envir = new.env(),
   params = list('r' = {if(is.null(r)) output$estimates$theta_hat['r'] else r},
                 'beta' = {if(is.null(beta)) output$estimates$theta_hat['beta'] else beta},

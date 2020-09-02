@@ -121,8 +121,22 @@ knitr::kable(
 
 # Estimation
 
+
 ```{r valparams}
-params$estimates
+print("Vecteur theta_hat: ")
+params$estimates$theta_hat
+
+print("Ecart-type: ")
+params$estimates$se_theta_hat
+
+print("Vecteur theta première étape: ")
+params$estimates$theta_1
+```
+
+Les termes diagonaux de la matrice de poids $W$ sont :
+
+```{r}
+round(diag(params$estimates$W_1),5)
 ```
 
 
