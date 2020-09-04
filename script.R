@@ -155,7 +155,9 @@ output <- mindist::estimation_theta(
   moments_weights = "weight",
   verbose = TRUE,
   Hgiven_var = "hg",
-  Hreceived_var = "hr")
+  Hreceived_var = "hr",
+  optim_args = list(method = "Nelder-Mead")
+)
 
 moments <- wealthyR:::label_moments(
   N_moments = number_moments,
