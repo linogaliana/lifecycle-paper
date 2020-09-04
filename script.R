@@ -127,8 +127,8 @@ parameters_estimation <- list("number_moments" = number_moments,
                               "select_moments" = select_moments,
                               "method" = estimation_method)
 
-beta <- 0.95
-r <- NULL
+beta <- NULL
+r <- 0.03
 gamma <- NULL
 
 menages_structural2[,'AGEPR' := age]
@@ -162,7 +162,7 @@ moments <- wealthyR:::label_moments(
   data = EP_lon,
   scale = scale_wealth,
   select_moments = select_moments,
-  by = c("AGEPR", NA)
+  # by = c(NA, "tr_age_2015")
 )
 
 saveRDS(
@@ -172,7 +172,7 @@ saveRDS(
 
 rmarkdown::render(
   'automatic_report.Rmd',
-  output_file = "overidentification_moment1",
+  output_file = "overidentification_moment1_rfixed",
   envir = new.env(),
   params = list('r' = {if(is.null(r)) output$estimates$theta_hat['r'] else r},
                 'beta' = {if(is.null(beta)) output$estimates$theta_hat['beta'] else beta},
