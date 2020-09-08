@@ -143,7 +143,7 @@ output <- mindist::estimation_theta(
   gamma = gamma,
   model_function = mindist:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
-  method = estimation_method,
+  approach = estimation_method,
   select_moments = select_moments,
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
@@ -156,7 +156,7 @@ output <- mindist::estimation_theta(
   verbose = TRUE,
   Hgiven_var = "hg",
   Hreceived_var = "hr",
-  optim_args = list(method = "Nelder-Mead")
+  method = "Nelder-Mead"
 )
 
 moments <- wealthyR:::label_moments(
