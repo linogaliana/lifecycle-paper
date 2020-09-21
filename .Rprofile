@@ -4,4 +4,3 @@ if (!file.exists("~/Destinie.zip")) utils::download.file("https://minio.stable.i
 if (!file.exists("~/Enquete Patrimoine.zip")) utils::download.file("https://minio.stable.innovation.insee.eu/groupe-788/Enquete%20Patrimoine.zip", dest = "~/Enquete Patrimoine.zip")
 
 system("git submodule update --init --recursive")
-system("chmod +x microCI/install.sh && microCI/install.sh")
