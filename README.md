@@ -5,7 +5,8 @@
 
 # *Executive summary*
 
-1. Lancer un service Rstudio avec [ce lien](https://onyxia-old.beta.innovation.insee.eu/my-lab/catalogue/inno/rstudio/deploiement?git.enable=true&rstudio.shiny=false&advanced.sudo=false&onyxia.friendly_name=microsimulation&service.mem=12096&rstudio.image_docker=git-registry.stable.innovation.insee.eu/microsimulation/microsimulationci). Le service s'affiche dans le tableau des services disponibles [ici](https://onyxia-old.beta.innovation.insee.eu/my-lab/mes-services). 
+
+1. Lancer un service Rstudio avec [ce lien](https://onyxia.beta.innovation.insee.eu/my-lab/catalogue/inseefrlab-datascience/rstudio/deploiement?service.mem=12048&onyxia.friendlyName=microsimulation). Le service s'affiche dans le tableau des services disponibles [ici](https://onyxia-old.beta.innovation.insee.eu/my-lab/mes-services). 
 
 2. Une fois le service démarré, il faut cloner ce dépôt en SSH. La démarche est expliquée *** avec l'adresse suivante `[git@git.stable.innovation.insee.eu:22222]:microsimulation/misc/estimation.git`
 
@@ -35,3 +36,10 @@ Les packages suivants sont utilisés:
 * [tablelight](https://github.com/linogaliana/tablelight): un package pour avoir des tableaux de régression. `stargazer`, le package de référence dans le domaine, fonctionne mal avec les modèles de type `oglm` ; j'ai donc eu besoin d'un autre package pour faire des tableaux de résultats
 
 Bientôt un package spécifique aux GMM/MD pour séparer celui-ci du traitement des données de patrimoine dans le package `wealthyR`
+
+
+## Update: nouveau onyxia
+
+Le lien fonctionnant avec onyxia a été mis à jour plus haut.
+
+L'ancien lien est [celui-ci](https://onyxia-old.beta.innovation.insee.eu/my-lab/catalogue/inno/rstudio/deploiement?git.enable=true&rstudio.shiny=false&advanced.sudo=false&onyxia.friendly_name=microsimulation&service.mem=12096&rstudio.image_docker=git-registry.stable.innovation.insee.eu/microsimulation/microsimulationci)
