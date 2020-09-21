@@ -1,5 +1,7 @@
 set.seed(12345)
 
+system("chmod +x microCI/install.sh && microCI/install.sh")
+
 library(tablelight)
 
 
