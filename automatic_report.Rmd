@@ -174,7 +174,7 @@ capitulation::plot_gini(data_prediction_augm2,
 ```
 
 
-```{r }
+```{r}
 LC1 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$wealth, plot = FALSE)
 LC2 <- ineq::Lc(data_prediction_augm2[annee==2020 & wealth>0]$revenu, plot = FALSE)
 df <- data.frame(p1 = LC1$p,
@@ -201,6 +201,12 @@ p
 
 
 # Graphs pour évaluer la qualité du fit
+
+
+```{r}
+wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = data_prediction_augm2,
+                          by_survey = "AGEPR", by_simulation = 'age', scale = "log")
+```
 
 Se référer au tableau pour les moments inclus dans l'analyse. 
 
