@@ -166,7 +166,7 @@ moments <- wealthyR:::label_moments(
   data = EP_lon,
   scale = scale_wealth,
   select_moments = select_moments,
-  # by = c(NA, "tr_age_2015")
+  by = c("AGEPR", NA)
 )
 
 saveRDS(
