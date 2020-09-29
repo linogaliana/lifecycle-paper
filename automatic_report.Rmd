@@ -204,8 +204,12 @@ p
 
 
 ```{r}
-wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = data_prediction_augm2,
-                          by_survey = "AGEPR", by_simulation = 'age', scale = "log")[['line']]
+gridExtra::grid.arrange(
+  wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = data_prediction_augm2,
+                          by_survey = "AGEPR", by_simulation = 'age', scale = "log")$fit[[1]],
+  wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = data_prediction_augm2,
+                          by_survey = "AGEPR", by_simulation = 'age', scale = "log")$fit[[2]]
+)
 ```
 
 Se référer au tableau pour les moments inclus dans l'analyse. 
