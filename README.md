@@ -6,7 +6,7 @@
 # *Executive summary*
 
 
-1. Lancer un service Rstudio avec [ce lien](https://onyxia.beta.innovation.insee.eu/my-lab/catalogue/inseefrlab-datascience/rstudio/deploiement?service.mem=12048&onyxia.friendlyName=microsimulation). Le service s'affiche dans le tableau des services disponibles [ici](https://onyxia-old.beta.innovation.insee.eu/my-lab/mes-services). 
+1. Lancer un service Rstudio avec [ce lien](https://onyxia.beta.innovation.insee.eu/my-lab/catalogue/inseefrlab-datascience/rstudio/deploiement?service.mem=12048&onyxia.friendlyName=microsimulation&networking.whitelist.enable=false). Le service s'affiche dans le tableau des services disponibles [ici](https://onyxia-old.beta.innovation.insee.eu/my-lab/mes-services). 
 
 2. Une fois le service démarré, il faut cloner ce dépôt en SSH. La démarche est expliquée *** avec l'adresse suivante `[git@git.stable.innovation.insee.eu:22222]:microsimulation/misc/estimation.git`
 
