@@ -133,10 +133,10 @@ beta <- NULL
 r <- 0.03
 gamma <- NULL
 
-beta_0 <- runif(1, min = 0.5, max = 1.5)
-# beta_0 <- 0.9
-gamma_0 <- runif(1, min = 0.2, max = 5)
-# gamma_0 <- 0.5
+# beta_0 <- runif(1, min = 0.5, max = 1.5)
+beta_0 <- 0.9
+# gamma_0 <- runif(1, min = 0.2, max = 5)
+gamma_0 <- 0.5
 
 menages_structural2[,'AGEPR' := age]
 
@@ -150,6 +150,35 @@ output <- mindist::estimation_theta(
   gamma = gamma,
   model_function = mindist:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
+  approach = estimation_method,
+  select_moments = select_moments,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = 180,
+  by = c("AGEPR", NA),
+  scale = scale_wealth,
+  moments_weights = "weight",
+  verbose = TRUE,
+  Hgiven_var = "hg",
+  Hreceived_var = "hr",
+  method = "Nelder-Mead"
+)
+
+
+
+output <- mindist::estimation_theta(
+  theta_0 = c("beta" = {if(is.null(beta)) 0.9 else NULL},
+              "gamma.parameters" = {if(is.null(gamma)) 0.5 else NULL},
+              "r" = {if(is.null(r)) 0.03 else NULL}
+  ),
+  beta = beta,
+  r = r,
+  gamma = "gamma ~ 0 + tr_age_2015",
+  model_function = mindist:::loss_function,
+  prediction_function = wealthyR:::model_capitulation,
+  additional_vars = "tr_age_2015",
   approach = estimation_method,
   select_moments = select_moments,
   EP_2015 = EP_2015,
