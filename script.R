@@ -161,7 +161,7 @@ output <- mindist::estimation_theta(
   EP_2018 = EP_2018,
   data_microsimulated = menages_structural2,
   N_moments = 180,
-  by = c("AGE", NA),
+  by = c("AGE", "tr_age_2015"),
   scale = scale_wealth,
   moments_weights = "weight",
   verbose = TRUE,
@@ -177,7 +177,7 @@ moments <- wealthyR:::label_moments(
   data = EP_lon,
   scale = scale_wealth,
   select_moments = select_moments,
-  by = c("AGEPR", NA)
+  by = c("AGEPR", NULL)
 )
 
 saveRDS(
