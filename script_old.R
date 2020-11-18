@@ -83,7 +83,7 @@ rmarkdown::render('old_report.Rmd',
 
 
 
-data_prediction_augm2 <- capitulation::life_cycle_model(data_prediction,
+data_prediction_augm2 <- capitulation::life_cycle_model(menages_structural2,
                                                         wealthvar_survey = "K_observed",
                                                         r = 0.03,
                                                         beta = 0.985,
@@ -91,7 +91,8 @@ data_prediction_augm2 <- capitulation::life_cycle_model(data_prediction,
                                                         observation_year = 2009,
                                                         income_var = "y_indiv",
                                                         return_last = FALSE,
-                                                        get_capital_income = TRUE)
+                                                        get_capital_income = TRUE,
+                                                        additional_vars = "tr_age_2015")
 
 capitulation::plot_K_age(data_prediction_augm2)
 capitulation::plot_rK_age(data_prediction_augm2)

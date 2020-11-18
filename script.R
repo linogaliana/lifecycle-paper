@@ -67,30 +67,34 @@ aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
 macro <- capitulation::macro
 
 
-EP_2015 <- wealthyR::read_EP(macro,
-                             path_data = path_data,
-                             year = 2015,
-                             .colsWealth = c('IDENT','AGEPR','POND',
-                                             'PATRI_NET','PATRI_BRUT',
-                                             'PATFI','PATFIMTC_DECL',
-                                             'PATFISOM','PATIMM',
-                                             'PATPROFENT','PATPROFHENT',
-                                             'PATRIC_DECL','NBUC','NPERS')
-)
+#' EP_2015 <- wealthyR::read_EP(macro,
+#'                              path_data = path_data,
+#'                              year = 2015,
+#'                              .colsWealth = c('IDENT','AGEPR','POND',
+#'                                              'PATRI_NET','PATRI_BRUT',
+#'                                              'PATFI','PATFIMTC_DECL',
+#'                                              'PATFISOM','PATIMM',
+#'                                              'PATPROFENT','PATPROFHENT',
+#'                                              'PATRIC_DECL','NBUC','NPERS')
+#' )
+#' 
+#' EP_2018 <- wealthyR::read_EP(macro,
+#'                              path_data = path_data,
+#'                              year = 2018,
+#'                              .colsWealth = c('IDENT','AGEPR',
+#'                                              #'POND','PATRI_NET',
+#'                                              'PATRI_BRUT',
+#'                                              'PATFI',
+#'                                              #'PATFIMTC_DECL',
+#'                                              'PATFISOM','PATIMM',
+#'                                              'PATPROFENT','PATPROFHENT',
+#'                                              'NBUC','NPERS'#,'PATRIC_DECL')
+#'                              )
+#' )
+#' 
 
-EP_2018 <- wealthyR::read_EP(macro,
-                             path_data = path_data,
-                             year = 2018,
-                             .colsWealth = c('IDENT','AGEPR',
-                                             #'POND','PATRI_NET',
-                                             'PATRI_BRUT',
-                                             'PATFI',
-                                             #'PATFIMTC_DECL',
-                                             'PATFISOM','PATIMM',
-                                             'PATPROFENT','PATPROFHENT',
-                                             'NBUC','NPERS'#,'PATRIC_DECL')
-                             )
-)
+EP_2018 <- wealthyR::individualize_EP(path_data = "~", year = 2018)
+EP_2015 <- wealthyR::individualize_EP(path_data = "~", year = 2015)
 
 
 # +++++++++++++++++++++++++++++++++++++++++++++++
@@ -196,6 +200,7 @@ rmarkdown::render(
                 "output" = output
   )
 )
+
 
 # output <- mindist::estimation_theta(
 #   theta_0 = c("beta" = {if(is.null(beta)) 0.9 else NULL},
