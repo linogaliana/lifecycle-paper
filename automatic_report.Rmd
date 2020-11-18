@@ -97,29 +97,6 @@ htmltools::includeHTML(tf)
 # Qualité estimation minimum distance
 
 ```{r}
-# OLD
-df_moment <- mindist::loss_function(
-#  match_call = TRUE,
-  prediction_function = wealthyR:::model_capitulation,
-  select_moments = select_moments,
-  theta = c('beta' = as.numeric(beta),
-            'gamma' = as.numeric(gamma),
-            "r" = as.numeric(r)),
-  gamma.parameters = params$gamma.parameters,
-  beta.parameters = params$beta.parameters,
-  r.parameters = params$r.parameters,
-  additional_vars = params$additional_vars,
-  EP_2015 = EP_2015,
-  EP_lon = EP_lon,
-  EP_2018 = EP_2018,
-  data_microsimulated = data.table::copy(population),
-  N_moments = number_moments,
-  scale = scale_wealth,
-  Hgiven_var = "hg",
-  Hreceived_var = "hr",
-  return_moment = TRUE
-)
-
 moments
 ```
 
