@@ -175,7 +175,7 @@ data_prediction_augm2 <- capitulation::life_cycle_model(
   Hgiven_var = "hg",
   Hreceived_var = "hr",
   return_last = FALSE,
-  get_capital_income = TRUE)
+  get_capital_income = TRUE, additional_vars = "tr_age_2015")
 ```
 
 # Résultats
@@ -249,7 +249,7 @@ wealthyR::plot_moment_pic(EP_2015 = EP_2015,
 ```{r plotvariation}
 wealthyR::plot_moment_dK(
   EP_lon = EP_lon, simulations = data_prediction_augm2,
-  scale = "log"
+  scale = "log", by = "tr_age_2015"
 )
 ```
 

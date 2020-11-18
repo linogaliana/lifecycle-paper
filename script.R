@@ -138,7 +138,7 @@ beta_0 <- 0.9
 # gamma_0 <- runif(1, min = 0.2, max = 5)
 gamma_0 <- 0.5
 
-menages_structural2[,'AGEPR' := age]
+menages_structural2[,'AGE' := age]
 
 output <- mindist::estimation_theta(
   theta_0 = c("beta" = {if(is.null(beta)) 0.9 else NULL},
@@ -157,7 +157,7 @@ output <- mindist::estimation_theta(
   EP_2018 = EP_2018,
   data_microsimulated = menages_structural2,
   N_moments = 180,
-  by = c("AGEPR", NA),
+  by = c("AGE", NA),
   scale = scale_wealth,
   moments_weights = "weight",
   verbose = TRUE,
@@ -214,7 +214,7 @@ rmarkdown::render(
   envir = new.env(),
   params = list('r' = {if(is.null(r)) output$estimates$theta_hat['r'] else r},
                 'beta' = {if(is.null(beta)) output$estimates$theta_hat['beta'] else beta},
-                'gamma' = "gamma ~ 0 + tr_age_2015",
+                'gamma' = {if(is.null(gamma)) output$estimates$theta_hat['gamma'] else gamma},
                 "gamma.parameters" = {if(is.null(output$estimates$theta_hat['gamma.parameters'])) output$estimates$theta_hat['gamma.parameters'] else NULL},
                 'estimates' = output$estimates,
                 "parameters_estimation" = parameters_estimation,
