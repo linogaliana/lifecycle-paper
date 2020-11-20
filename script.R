@@ -1,10 +1,9 @@
 set.seed(12345)
-
 system("chmod +x microCI/install.sh && microCI/install.sh")
 
+source("functions.R")
+
 library(tablelight)
-
-
 
 
 
@@ -12,33 +11,8 @@ unzip("~/Destinie.zip", exdir="~")
 unzip("~/Enquete Patrimoine.zip", exdir="~")
 
 
+inheritance_model <- create_inheritance_model()
 
-EP_data <- wealthyR:::prepare_inheritance_sample(
-  path_survey =  "~/Enquete Patrimoine"
-)
-
-# MODEL 1: INTERVAL REGRESSION ---------------
-
-inheritance_data <- REtage::prepare_estimation(EP_data)
-
-
-bounds <- c(3,8,15,30,60,100,150,200,250)*1000
-lbounds <- log(bounds)
-
-estim_data <- inheritance_data[get('revenu')>0]
-
-estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
-estim_data <- estim_data[order(MTHER)]
-estim_data[,'age' := get('AGE')]
-# estim_data[,'findet' := get('AGFINETU')]
-
-inheritance_model <- REtage::ordered_model_threshold(
-  data = data.frame(estim_data[order(MTHER)]),
-  formula = "MTHER ~ lw + age + I((age^2)/100) + AGFINETU + I((AGFINETU^2)/100)",
-  link = "probit",
-  constantSD = TRUE,
-  thresholds = lbounds
-)
 
 summary(inheritance_model)
 
@@ -51,70 +25,20 @@ saveRDS(
 
 path_data <- "~"
 
-data_prediction <- capitulation::prepare_data(
-  path_data = "~",
-  inheritance_model = inheritance_model
-)
-
-
 aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
                   bucket = "groupe-788")
 
 
+data <- construct_EP()
 
 
-
-macro <- capitulation::macro
-
-
-#' EP_2015 <- wealthyR::read_EP(macro,
-#'                              path_data = path_data,
-#'                              year = 2015,
-#'                              .colsWealth = c('IDENT','AGEPR','POND',
-#'                                              'PATRI_NET','PATRI_BRUT',
-#'                                              'PATFI','PATFIMTC_DECL',
-#'                                              'PATFISOM','PATIMM',
-#'                                              'PATPROFENT','PATPROFHENT',
-#'                                              'PATRIC_DECL','NBUC','NPERS')
-#' )
-#' 
-#' EP_2018 <- wealthyR::read_EP(macro,
-#'                              path_data = path_data,
-#'                              year = 2018,
-#'                              .colsWealth = c('IDENT','AGEPR',
-#'                                              #'POND','PATRI_NET',
-#'                                              'PATRI_BRUT',
-#'                                              'PATFI',
-#'                                              #'PATFIMTC_DECL',
-#'                                              'PATFISOM','PATIMM',
-#'                                              'PATPROFENT','PATPROFHENT',
-#'                                              'NBUC','NPERS'#,'PATRIC_DECL')
-#'                              )
-#' )
-#' 
-
-EP_2018 <- wealthyR::individualize_EP(path_data = "~", year = 2018)
-EP_2015 <- wealthyR::individualize_EP(path_data = "~", year = 2015)
-
-
-# +++++++++++++++++++++++++++++++++++++++++++++++
-# B/ CREATE LONGITUDINAL INDIVIDUAL DATA ========
-# +++++++++++++++++++++++++++++++++++++++++++++++
-
-EP_lon <- wealthyR::longitudinal_survey(macro = macro,
-                                        path_data = path_data,
-                                        EP_2015 = EP_2015,
-                                        EP_2018 = EP_2018)
-EP_lon[,'tr_age_2015' := floor(get("AGEPR_2015")/5)*5]
-
-
-data <- list(
-  'EP_2015' = EP_2015,
-  'EP_2018' = EP_2018,
-  'EP_lon' = EP_lon
-)
 saveRDS(data, "data.rds")
 
+
+data_prediction <- capitulation::prepare_data(
+  path_data = "~",
+  inheritance_model = inheritance_model
+)
 
 menages_structural2 <- data.table::copy(data_prediction)
 menages_structural2[,'hg' := get('H_given')]
@@ -146,8 +70,8 @@ gamma_0 <- 0.5
 menages_structural2[,'AGE' := age]
 
 output <- mindist::estimation_theta(
-  theta_0 = c("beta" = {if(is.null(beta)) 0.9 else NULL},
-              "gamma" = {if(is.null(gamma)) 0.5 else NULL},
+  theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
+              "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
               "r" = {if(is.null(r)) 0.03 else NULL}
               ),
   beta = beta,
@@ -182,9 +106,6 @@ moments <- wealthyR:::label_moments(
   by = c("AGEPR", NULL)
 )
 
-saveRDS(
-  menages_structural2, file = "tempfile.rds"
-)
 
 
 rmarkdown::render(
