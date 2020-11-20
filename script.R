@@ -59,6 +59,7 @@ data_prediction <- capitulation::prepare_data(
 
 aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
                   bucket = "groupe-788")
+saveRDS(data_prediction, file = "tempfile.rds")
 
 
 
