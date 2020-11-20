@@ -163,6 +163,7 @@ output <- mindist::estimation_theta(
   data_microsimulated = menages_structural2,
   N_moments = 180,
   by = c("AGE", "tr_age_2015"),
+  # moment1 = "share",
   scale = scale_wealth,
   moments_weights = "weight",
   verbose = TRUE,
