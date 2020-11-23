@@ -2,7 +2,7 @@ library(data.table)
 library(capitulation)
 library(ggplot2)
 
-if (!file.exists("tempfile.rds")){
+if (!file.exists("~/estimation/tempfile.rds")){
   set.seed(12345)
   system("chmod +x microCI/install.sh && microCI/install.sh")
   
@@ -22,7 +22,7 @@ if (!file.exists("tempfile.rds")){
   summary(inheritance_model)
   
   saveRDS(
-    inheritance_model, file = "modele.rds"
+    inheritance_model, file = "~/estimation/modele.rds"
   )
   
   
@@ -30,26 +30,25 @@ if (!file.exists("tempfile.rds")){
   
   path_data <- "~"
   
-  aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
-                    bucket = "groupe-788")
-  
   
   data <- construct_EP()
   
   
-  saveRDS(data, "data.rds")
+  saveRDS(data, "~/estimation/data.rds")
   
   
   data_prediction <- capitulation::prepare_data(
     path_data = "~",
     inheritance_model = inheritance_model
   )
+  # aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
+  #                   bucket = "groupe-788")
   
   menages_structural2 <- data.table::copy(data_prediction)
   menages_structural2[,'hg' := get('H_given')]
   menages_structural2[,'hr' := get('H_received')]
   menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
-  saveRDS(menages_structural2, file = "tempfile.rds")  
+  saveRDS(menages_structural2, file = "~/estimation/tempfile.rds")  
 } else{
   population <- readRDS("~/estimation/tempfile.rds")
   data <- readRDS("~/estimation/data.rds")

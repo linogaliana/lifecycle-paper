@@ -61,10 +61,17 @@ server <- function(input, output) {
   
   
   p_moment1 <- reactive(
-    wealthyR:::plot_moment_age_facet(EP_2015, EP_2018, simulations = data_prediction_augm2(),
-                                     by_survey = "AGE", by_simulation = "age",
-                                     scale = "log",
-                                     facets_vars = bys()[1])
+    if (is.null(bys())){
+      wealthyR:::plot_moment_age_facet(EP_2015, EP_2018, simulations = data_prediction_augm2(),
+                                       by_survey = "AGE", by_simulation = "age",
+                                       scale = "log",
+                                       facets_vars = bys())[[1]]
+    } else{
+      wealthyR:::plot_moment_age_facet(EP_2015, EP_2018, simulations = data_prediction_augm2(),
+                                       by_survey = "AGE", by_simulation = "age",
+                                       scale = "log",
+                                       facets_vars = bys())      
+    }
   )
   
   

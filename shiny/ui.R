@@ -12,8 +12,8 @@ ui = fluidPage(
     
     sidebarPanel(
       numericInput("r", label = "Taux d'intérêt r (%)", value = 3),
-      numericInput("gamma", label = "\u03B3", value = 0.5),
-      numericInput("beta", label = "\u03B2", value = 0.9)
+      numericInput("gamma", label = "\u03B3", value = 0.8189066),
+      numericInput("beta", label = "\u03B2", value = 0.975661)
     ),
     
     # Show a plot of the generated distribution
