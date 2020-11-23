@@ -17,34 +17,36 @@ inheritance_model <- create_inheritance_model()
 summary(inheritance_model)
 
 saveRDS(
-  inheritance_model, file = "modele.rds"
+  inheritance_model, file = "~/estimation/modele.rds"
 )
 
 
-# PART 2 ESTIMATION DU MODELE ---------------
+# PART 2 PREPARATION DONNEES ---------------
 
 path_data <- "~"
 
-aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
-                  bucket = "groupe-788")
-
 
 data <- construct_EP()
+EP_2015 <- data[['EP_2015']]
+EP_2018 <- data[['EP_2018']]
+EP_lon <- data[['EP_lon']]
 
 
-saveRDS(data, "data.rds")
+saveRDS(data, "~/estimation/data.rds")
 
 
 data_prediction <- capitulation::prepare_data(
   path_data = "~",
   inheritance_model = inheritance_model
 )
+# aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
+#                   bucket = "groupe-788")
 
 menages_structural2 <- data.table::copy(data_prediction)
 menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
 menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
-saveRDS(menages_structural2, file = "tempfile.rds")
+saveRDS(menages_structural2, file = "~/estimation/tempfile.rds")  
 
 
 # ESTIMATION ---------------
