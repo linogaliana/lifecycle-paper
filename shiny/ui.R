@@ -39,7 +39,10 @@ ui = fluidPage(
                            plotOutput("distPlot")),
                   tabPanel("Courbe de Lorenz",
                            numericInput("year_lorenz", label = h3("Année"), value = 2020),
-                           plotOutput("lorenzPlot"))
+                           plotOutput("lorenzPlot")),
+                  tabPanel("Estimation",
+                           h3("Performance en estimation de ces paramètres")
+                           )
       )      
     )
   )

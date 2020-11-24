@@ -46,6 +46,7 @@ menages_structural2 <- data.table::copy(data_prediction)
 menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
 menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
+menages_structural2[, 'AGE' := get('AGE')]
 saveRDS(menages_structural2, file = "~/estimation/tempfile.rds")  
 
 
