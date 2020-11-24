@@ -59,6 +59,11 @@ server <- function(input, output) {
                                year = input$year_lorenz)
   )
   
+  p_share <- reactive(
+    capitulation:::plot_top_share(data_prediction_augm2(),
+                              threshold = (1 - input$topx/100))
+  ) 
+  
   
   p_moment1 <- reactive(
     if (is.null(bys())){
@@ -111,7 +116,9 @@ server <- function(input, output) {
   output$moment2 <- renderPlot({
     p_moment2()
   })
-  
+  output$sharePlot <- renderPlot({
+    p_share()
+  })  
   
   
 }

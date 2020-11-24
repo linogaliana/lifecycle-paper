@@ -31,7 +31,12 @@ ui = fluidPage(
                            plotOutput("moment2")),
                   tabPanel("Patrimoine par âge", plotOutput("Kplot")),
                   tabPanel("Revenu patrimoine par âge", plotOutput("rKplot")),
-                  tabPanel("Indice de Gini", plotOutput("distPlot")),
+                  tabPanel("Indice de Gini", 
+                           numericInput("topx",
+                                        label = "Part richesse, revenu, etc. du top x% ",
+                                        value = 10),
+                           plotOutput("sharePlot"),
+                           plotOutput("distPlot")),
                   tabPanel("Courbe de Lorenz",
                            numericInput("year_lorenz", label = h3("Année"), value = 2020),
                            plotOutput("lorenzPlot"))
