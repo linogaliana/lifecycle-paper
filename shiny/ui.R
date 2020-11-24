@@ -31,7 +31,7 @@ ui = fluidPage(
                            plotOutput("moment2")),
                   tabPanel("Patrimoine par âge", plotOutput("Kplot")),
                   tabPanel("Revenu patrimoine par âge", plotOutput("rKplot")),
-                  tabPanel("Indice de Gini", 
+                  tabPanel("Evolution inégalités", 
                            numericInput("topx",
                                         label = "Part richesse, revenu, etc. du top x% ",
                                         value = 10),
