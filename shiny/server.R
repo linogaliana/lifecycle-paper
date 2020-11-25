@@ -61,7 +61,7 @@ server <- function(input, output) {
   
   p_share <- reactive(
     capitulation:::plot_top_share(data_prediction_augm2(),
-                              threshold = (1 - input$topx/100))
+                                  threshold = (1 - input$topx/100))
   ) 
   
   
@@ -95,6 +95,17 @@ server <- function(input, output) {
   )
   
   
+  epseps <- reactive(report_epsilon(
+    r = input$r/100,
+    beta = input$beta,
+    gamma = input$gamma,
+    population = population,
+    EP_2015 = EP_2015,
+    EP_2018 = EP_2018,
+    EP_lon = EP_lon)
+  )
+  
+  
   output$Kplot <- renderPlot({
     p_K()
   })
@@ -120,5 +131,8 @@ server <- function(input, output) {
     p_share()
   })  
   
+  output$eps <- renderText({ 
+    sprintf("\u03B5'\u03B5  value: %s", epseps())
+  })
   
 }

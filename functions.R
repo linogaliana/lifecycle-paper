@@ -130,9 +130,9 @@ report_epsilon <- function(r, beta, gamma,
     theta = c("beta" = beta,
               "gamma" = gamma,
               "r" = r),
-    beta = beta,
-    r = r,
-    gamma = gamma,
+    # beta = beta,
+    # r = r,
+    # gamma = gamma,
     prediction_function = wealthyR:::model_capitulation,
     EP_2015 = EP_2015,
     EP_lon = EP_lon,
@@ -149,6 +149,6 @@ report_epsilon <- function(r, beta, gamma,
   )
   
   return(
-    sum(output$moments$moment_optimum$epsilon^2)
+    sum((output$moment_simulations - output$moment_data)^2)
   )
 }

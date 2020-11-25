@@ -41,7 +41,8 @@ ui = fluidPage(
                            numericInput("year_lorenz", label = h3("Année"), value = 2020),
                            plotOutput("lorenzPlot")),
                   tabPanel("Estimation",
-                           h3("Performance en estimation de ces paramètres")
+                           h3("Performance en estimation de ces paramètres"),
+                           textOutput("eps")
                            )
       )      
     )

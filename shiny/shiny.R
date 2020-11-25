@@ -48,41 +48,18 @@ if (!file.exists("~/estimation/tempfile.rds")){
   menages_structural2[,'hg' := get('H_given')]
   menages_structural2[,'hr' := get('H_received')]
   menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
-  saveRDS(menages_structural2, file = "~/estimation/tempfile.rds")  
-} else{
-  population <- readRDS("~/estimation/tempfile.rds")
-  data <- readRDS("~/estimation/data.rds")
-  EP_2015 <- data[['EP_2015']]
-  EP_2018 <- data[['EP_2018']]
-  EP_lon <- data[['EP_lon']]
+  saveRDS(menages_structural2, file = "~/estimation/tempfile.rds")
 }
 
+source("functions.R")
+
+population <- readRDS("~/estimation/tempfile.rds")
+data <- readRDS("~/estimation/data.rds")
+EP_2015 <- data[['EP_2015']]
+EP_2018 <- data[['EP_2018']]
+EP_lon <- data[['EP_lon']]
+
 population[,'AGE' := get('age')]
-
-# df_moment <- wealthyR::model_capitulation(
-#   EP_2015 = EP_2015,
-#   EP_lon = EP_lon,
-#   EP_2018 = EP_2018,
-#   data_microsimulated = population,
-#   theta = estimator_theta,
-#   approach = estimation_method,
-#   select_moments = select_moments,
-#   EP_2015 = EP_2015,
-#   EP_lon = EP_lon,
-#   EP_2018 = EP_2018,
-#   data_microsimulated = population,
-#   N_moments = 180,
-#   by = c("AGE", "tr_age_2015"),
-#   # moment1 = "share",
-#   scale = scale_wealth,
-#   moments_weights = "weight",
-#   verbose = TRUE,
-#   Hgiven_var = "hg",
-#   Hreceived_var = "hr",
-#   method = "Nelder-Mead"
-# )
-# W_1 <- mindist:::optimal_weight_matrix(df_moment[["epsilon"]])
-
 
 
 
