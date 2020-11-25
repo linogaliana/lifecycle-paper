@@ -65,3 +65,90 @@ construct_EP <- function(path_data = "~"){
   return(data)  
 }
 
+
+report_loss_function <- function(r, beta, gamma,
+                                 population,
+                                 EP_2015, EP_2018, EP_lon,
+                                 verbose = FALSE){
+  
+  output <- mindist:::calibration_theta(
+    theta = c("beta" = beta,
+              "gamma" = gamma,
+              "r" = r),
+    beta = beta,
+    r = r,
+    gamma = gamma,
+    model_function = mindist:::loss_function,
+    prediction_function = wealthyR:::model_capitulation,
+    EP_2015 = EP_2015,
+    EP_lon = EP_lon,
+    EP_2018 = EP_2018,
+    data_microsimulated = population,
+    N_moments = 180,
+    by = c("AGE", "tr_age_2015"),
+    # moment1 = "share",
+    scale = "log",
+    moments_weights = "weight",
+    verbose = TRUE,
+    Hgiven_var = "hg",
+    Hreceived_var = "hr"
+  )
+  
+  epseps <- sum(output$moments$moment_optimum$epsilon^2)
+  epsWeps <- as.numeric(
+    t(output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% output$moments$moment_first_step$epsilon
+  )
+  l_theta <- epsWeps/(length(output$moments$moment_optimum$epsilon)^2)
+  
+  
+  if (isTRUE(verbose)){
+    message(sprintf("\\epsilon' \\epsilon: %s", epseps))
+    message(sprintf("\\epsilon' W \\epsilon: %s", epsWeps))
+    message(sprintf("(\\epsilon' W \\epsilon)/(M^2): %s", l_theta))
+  }
+  
+  
+  
+  return(
+    list(
+      "epseps" = epseps,
+      "epsWeps" = epsWeps,
+      "l_theta" = l_theta
+    )
+  )
+  
+  
+}
+
+
+report_epsilon <- function(r, beta, gamma,
+                           population,
+                           EP_2015, EP_2018, EP_lon){
+  
+  
+  output <- wealthyR:::model_capitulation(
+    theta = c("beta" = beta,
+              "gamma" = gamma,
+              "r" = r),
+    beta = beta,
+    r = r,
+    gamma = gamma,
+    prediction_function = wealthyR:::model_capitulation,
+    EP_2015 = EP_2015,
+    EP_lon = EP_lon,
+    EP_2018 = EP_2018,
+    data_microsimulated = population,
+    N_moments = 180,
+    by = c("AGE", "tr_age_2015"),
+    # moment1 = "share",
+    scale = "log",
+    moments_weights = "weight",
+    verbose = TRUE,
+    Hgiven_var = "hg",
+    Hreceived_var = "hr"
+  )
+  
+  return(
+    sum(output$moments$moment_optimum$epsilon^2)
+  )
+}
