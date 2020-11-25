@@ -18,4 +18,6 @@ epseps <- report_epsilon(
   population = population,
   EP_2015 = EP_2015,
   EP_2018 = EP_2018,
-  EP_lon = EP_lon)
+  EP_lon = EP_lon,
+  verbose = TRUE)
+epseps

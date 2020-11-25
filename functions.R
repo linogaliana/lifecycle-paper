@@ -123,7 +123,8 @@ report_loss_function <- function(r, beta, gamma,
 
 report_epsilon <- function(r, beta, gamma,
                            population,
-                           EP_2015, EP_2018, EP_lon){
+                           EP_2015, EP_2018, EP_lon,
+                           verbose = FALSE){
   
   
   output <- wealthyR:::model_capitulation(
@@ -148,7 +149,13 @@ report_epsilon <- function(r, beta, gamma,
     Hreceived_var = "hr"
   )
   
+  epseps <- sum((output$moment_simulations - output$moment_data)^2)
+  
+  if (isTRUE(verbose)){
+    message(sprintf("\\epsilon' \\epsilon: %s", epseps))
+  }
+  
   return(
-    sum((output$moment_simulations - output$moment_data)^2)
+    epseps
   )
 }
