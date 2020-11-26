@@ -40,7 +40,7 @@ results <- lapply(seq(0.9, 0.92, by = 0.01), function(b){
     verbose = TRUE)
   return(
     data.frame('loss' = epseps,
-               'beta' = beta,
+               'beta' = b,
                'gamma' = gamma,
                'r' = r
     )
