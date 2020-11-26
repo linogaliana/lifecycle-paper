@@ -94,9 +94,9 @@ report_loss_function <- function(r, beta, gamma,
     Hreceived_var = "hr"
   )
   
-  epseps <- sum(output$moments$moment_optimum$epsilon^2)
+  epseps <- sum((output$moments$moment_optimum$weight*output$moments$moment_optimum$epsilon)^2)
   epsWeps <- as.numeric(
-    t(output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% output$moments$moment_first_step$epsilon
+    t(output$moments$moment_optimum$weight*output$moments$moment_first_step$epsilon) %*% output$estimates$W_1 %*% (output$moments$moment_optimum$weight*output$moments$moment_first_step$epsilon)
   )
   l_theta <- epsWeps/(length(output$moments$moment_optimum$epsilon)^2)
   
@@ -120,6 +120,9 @@ report_loss_function <- function(r, beta, gamma,
   
 }
 
+r= 0.03
+gamma= 0.7610854
+beta= 0.9760395
 
 report_epsilon <- function(r, beta, gamma,
                            population,
@@ -149,7 +152,7 @@ report_epsilon <- function(r, beta, gamma,
     Hreceived_var = "hr"
   )
   
-  epseps <- sum((output$moment_simulations - output$moment_data)^2)
+  epseps <- sum((output$weight*output$epsilon)^2)
   
   if (isTRUE(verbose)){
     message(sprintf("\\epsilon' \\epsilon: %s", epseps))

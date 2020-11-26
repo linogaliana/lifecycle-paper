@@ -12,6 +12,7 @@ epseps <- report_epsilon(
   # theta = c(r = r,
   #           beta = beta,
   #           gamma = gamma),
+  # model_function = wealthyR:::model_capitulation,
   r = r,
   beta = beta,
   gamma = gamma,
