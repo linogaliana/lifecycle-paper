@@ -1,5 +1,10 @@
 require(plotly)
 
+
+results3 <- aws.s3::s3read_using(FUN = data.table::fread,
+                                 object = "grid.csv",
+                                 region = "")
+
 results4 <- data.table::copy(results3)
 results4[,'labels' := paste0('beta: ', get("beta"),
                              '<br>',
