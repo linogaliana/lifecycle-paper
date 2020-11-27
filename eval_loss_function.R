@@ -5,8 +5,8 @@ library(ggplot2)
 source("import_functions.R")
 
 r <- 0.03
-beta <- 0.95
-gamma <- 0.5
+beta <- 0.975
+gamma <- 0.8
 
 epseps <- report_epsilon(
   # theta = c(r = r,
