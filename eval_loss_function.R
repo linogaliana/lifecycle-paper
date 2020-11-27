@@ -34,14 +34,14 @@ theta <- c(beta = '0.975', gamma = '0.6')
 
 
 betas <- seq(0.9, 1, by = 0.005)
-gammas <- seq(0.4,0.6, by = 0.02)
+gammas <- seq(3, 6, by = 0.1)
 
 grid <- data.frame(
   expand.grid(beta = betas, gamma = gammas)
 )
 
 grid <- split(grid, 1:nrow(grid))
-grid <- grid[201:length(grid)]
+#grid <- grid[201:length(grid)]
 
 
 system.time(
@@ -75,32 +75,25 @@ results2 <- data.table::rbindlist(list(results, results2), fill = TRUE, use.name
 results3 <- unique(results2)
 library(plotly)
 
-contingency_table <- xtabs(loss ~ beta + gamma, data = results3)
+results4 <- data.table::copy(results3)
+results4[,'labels' := paste0('beta: ', get("beta"),
+                             '<br>',
+                             'gamma: ',  get("gamma"),
+                             '<br>',
+                             'loss: ',  get("loss")
+                             )] 
 
 
-
-plot_ly(
-  x = as.numeric(rownames(contingency_table)), 
-  y = as.numeric(colnames(contingency_table)), 
-  z = contingency_table,
-  text = labels
-  ) %>% 
-  add_surface(colorscale='Hot') %>%
-  layout(
-    title = "",
-    scene = list(
-      xaxis = list(title = "beta"),
-      yaxis = list(title = "gamma"),
-      zaxis = list(title = "loss"),
-      camera = list(eye = list(x = 1.95, y = -1.25, z = 1.25))
-    ))  
-
-# fig <- fig %>% layout(
-#   scene = list(
-#     camera=list(
-#       eye = list(x=0.905, y=0.41, z=0.01)
-#     )
-#   )
-# )
+fig <- plot_ly(
+  data = results4,
+  x = ~beta, 
+  y = ~gamma, 
+  z = ~loss,
+  intensity=~loss,
+  text=~labels,
+  type = "mesh3d",
+  colorscale = "Hot",
+  hoverinfo = 'text'
+)
 
 fig
