@@ -27,3 +27,12 @@ simulations[annee == 2015, as.list(summary(wealth)), by="tr_diplome"][order(tr_d
 simulations[annee == 2015, as.list(summary(wealth)), keyby=decile_w][order(decile_w)]
 simulations[annee == 2015, as.list(summary(wealth)), keyby=decile_y][order(decile_y)]
 
+
+tempdf <- simulations[,.('med' = median(wealth),
+                         'mean' = mean(wealth)),by = annee]
+tempdf <- data.table::melt(tempdf, id.vars = "annee")
+
+library(ggplot2)
+
+ggplot(tempdf[annee>=2009 & annee<=2040]) + geom_line(aes(x = annee, y = value, color = variable))
+
