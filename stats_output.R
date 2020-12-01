@@ -32,7 +32,23 @@ tempdf <- simulations[,.('med' = median(wealth),
                          'mean' = mean(wealth)),by = annee]
 tempdf <- data.table::melt(tempdf, id.vars = "annee")
 
+# PAR ANNEE ------
+
+
 library(ggplot2)
+library(data.table)
+
 
 ggplot(tempdf[annee>=2009 & annee<=2040]) + geom_line(aes(x = annee, y = value, color = variable))
 
+
+
+# PAR AGE ------
+
+tempdf <- simulations[,.('med' = median(wealth),
+                         'mean' = mean(wealth)),by = c("annee", "age")]
+tempdf <- data.table::melt(tempdf, id.vars = c("annee","age"))
+
+
+ggplot(tempdf[annee>=2009 & annee<=2040 & age %between% c(25,80) & variable == "med"]) +
+  geom_smooth(aes(x = age, y = value, color = factor(annee), linetype = variable), se = FALSE)
