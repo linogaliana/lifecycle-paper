@@ -153,6 +153,7 @@ data_prediction_augm2 <- capitulation::life_cycle_model(
   Hreceived_var = "hr",
   return_last = FALSE,
   get_capital_income = TRUE, additional_vars = "tr_age_2015")
+
 ```
 
 # Résultats

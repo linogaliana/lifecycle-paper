@@ -50,6 +50,7 @@ menages_structural2[, 'AGE' := get('AGE')]
 saveRDS(menages_structural2, file = "~/estimation/tempfile.rds")  
 
 
+
 # ESTIMATION ---------------
 
 number_moments <- 2L
@@ -72,14 +73,20 @@ gamma_0 <- 0.5
 
 menages_structural2[,'AGE' := age]
 
+
+menages_structural2[,'SEXE' := as.numeric(as.character(get("SEXE")))]
+EP_2015[,'SEXE' := as.numeric(as.character(get("SEXE")))]
+EP_2018[,'SEXE' := as.numeric(as.character(get("SEXE")))]
+EP_lon[,'SEXE' := as.numeric(as.character(get("SEXE")))]
+
 output <- mindist::estimation_theta(
   theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
-              "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+              "gamma.parameters" = gamma_0,
               "r" = {if(is.null(r)) 0.03 else NULL}
               ),
   beta = beta,
   r = r,
-  gamma = gamma,
+  gamma = "gamma ~ 0 + SEXE",
   model_function = mindist:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
   approach = estimation_method,
@@ -96,7 +103,8 @@ output <- mindist::estimation_theta(
   verbose = TRUE,
   Hgiven_var = "hg",
   Hreceived_var = "hr",
-  method = "Nelder-Mead"
+  method = "Nelder-Mead",
+  additional_vars = "SEXE"
 )
 
 
@@ -113,7 +121,7 @@ moments <- wealthyR:::label_moments(
 
 rmarkdown::render(
   'automatic_report.Rmd',
-  output_file = "overidentification_moment1_rfixed",
+  output_file = "overidentification_new",
   envir = new.env(),
   params = list('r' = {if(is.null(r)) output$estimates$theta_hat['r'] else r},
                 'beta' = {if(is.null(beta)) output$estimates$theta_hat['beta'] else beta},
