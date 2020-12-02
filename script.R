@@ -106,7 +106,7 @@ moments <- wealthyR:::label_moments(
   data = EP_lon,
   scale = scale_wealth,
   select_moments = select_moments,
-  by = c("AGEPR", NULL)
+  by = c("AGE", NULL)
 )
 
 

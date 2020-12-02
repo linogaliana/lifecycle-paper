@@ -125,28 +125,68 @@ ggsave(plot = p1, "./stats/plot_wealth_evolution.pdf")
 ## INEGALITES =========================
 
 simul_copy <- data.table::copy(simulations)
-
 p2 <- capitulation::plot_gini(simul_copy,
-                        vars = c("revenu", "wealth", "Y"))
-ggsave(plot = p2, "./stats/gini_evolution.pdf", width = 12, height = 8)
+                        vars = c("revenu", "wealth", "Y"),
+                        negative_values = "truncate")
+ggsave(plot = p2, "./stats/gini_evolution_noneg.pdf", width = 12, height = 8)
 
 simul_copy <- data.table::copy(simulations)
+p2b <- capitulation::plot_gini(simul_copy,
+                              vars = c("revenu", "wealth", "Y"),
+                              negative_values = "keep")
+ggsave(plot = p2b, "./stats/gini_evolution.pdf", width = 12, height = 8)
 
-p3 <- capitulation::plot_top_share(simul_copy) +
+
+simul_copy <- data.table::copy(simulations)
+p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Percentage total held by top10",
+       color = NULL)
+ggsave(plot = p3, "./stats/top10_evolution_noneg.pdf", width = 12, height = 8)
+
+simul_copy <- data.table::copy(simulations)
+p3 <- capitulation::plot_top_share(simul_copy, negative_values = "keep") +
   theme_bw() + 
   theme(legend.position = "bottom") +
   labs(x = "Year", y = "Percentage total held by top10",
        color = NULL)
 ggsave(plot = p3, "./stats/top10_evolution.pdf", width = 12, height = 8)
 
-simul_copy <- data.table::copy(simulations)
 
-p3b <- capitulation::plot_top_share(simul_copy, threshold = 0.99) +
+simul_copy <- data.table::copy(simulations)
+p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Percentage total held by top10",
+       color = NULL)
+ggsave(plot = p3, "./stats/top10_evolution_noneg.pdf", width = 12, height = 8)
+
+simul_copy <- data.table::copy(simulations)
+p3 <- capitulation::plot_top_share(simul_copy, negative_values = "keep") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Percentage total held by top10",
+       color = NULL)
+ggsave(plot = p3, "./stats/top10_evolution.pdf", width = 12, height = 8)
+
+
+
+simul_copy <- data.table::copy(simulations)
+p3 <- capitulation::plot_top_share(simul_copy, threshold = 0.99, negative_values = "truncate") +
   theme_bw() + 
   theme(legend.position = "bottom") +
   labs(x = "Year", y = "Percentage total held by top1",
        color = NULL)
-ggsave(plot = p3b, "./stats/top1_evolution.pdf", width = 12, height = 8)
+ggsave(plot = p3, "./stats/top1_evolution_noneg.pdf", width = 12, height = 8)
+
+simul_copy <- data.table::copy(simulations)
+p3 <- capitulation::plot_top_share(simul_copy, threshold = 0.99, negative_values = "keep") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Percentage total held by top1",
+       color = NULL)
+ggsave(plot = p3, "./stats/top1_evolution.pdf", width = 12, height = 8)
 
 
 
@@ -175,10 +215,38 @@ ggplot2::ggplot(
 
 # MOMENTS --------------------------
 
+## MOMENT 1 =================
+
+moment1 <- gridExtra::grid.arrange(
+  wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = simulations,
+                            by_survey = "AGE", by_simulation = 'age', scale = "log")$fit[[1]] +
+    scale_fill_manual(values = c('microsimulation' = 'black', 
+                                   'survey' = 'royalblue')) + theme_bw() +
+    theme(legend.position = "top"),
+  wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = simulations,
+                            by_survey = "AGEPR", by_simulation = 'age', scale = "log")$fit[[2]]
+)
+
+ggsave(plot = moment1, "./stats/moment1.pdf", width = 18, height = 10)
 
 
 
+## MOMENT 2 ================
 
+moment2 <- wealthyR::plot_moment_dK(
+  EP_lon = EP_lon, simulations = simulations,
+  scale = "log", by = "tr_age_2015"
+) + scale_color_manual(values = c('simulation' = 'black', 
+                               'survey' = 'royalblue')) + theme_bw() +
+  theme(legend.position = "bottom")
+
+
+ggsave(plot = moment1, "./stats/moment2.pdf", width = 12, height = 8)
+
+
+## MOMENT 2 BY=. ================
+
+## SEXE +++++++++
 
 
 
