@@ -10,7 +10,7 @@ EP_lon <- data[['EP_lon']]
 
 beta  <- 0.9724306
 gamma <- 0.8435442
-
+r <- 0.03
 
 # SIMULATE MODEL -----------------------------
 
@@ -18,57 +18,88 @@ gamma <- 0.8435442
 simulations <- capitulation::life_cycle_model(
   population,
   wealthvar_survey = "K_observed",
-  r = 0.03,
-  beta = output$estimates$theta_hat["beta"],
-  gamma = output$estimates$theta_hat["gamma"],
+  r = r,
+  beta = beta,
+  gamma = gamma,
   observation_year = 2009,
   income_var = "revenu",
   Hgiven_var = "hg",
   Hreceived_var = "hr",
   return_last = FALSE,
-  get_capital_income = TRUE, additional_vars = c("tr_age_2015","sexe","findet"))
+  get_capital_income = TRUE,
+  additional_vars = c("tr_age_2015","sexe","findet"))
 
 
 # UN PEU DE DATA CLEANING --------------------
 
-simulations[, 'SEXE' := data.table::fifelse(get('sexe')==1,
-                                            'Homme',
-                                            'Femme')]
-simulations[, 'tr_diplome' := cut(findet, breaks = c(min(findet), 16,18,21,25, max(findet)), include.lowest = TRUE)]
-simulations[, 'decile_w' := cut(revenu,quantile(revenu,probs= 0:10/10), labels = 1:10, include.lowest = TRUE)]
-simulations[, 'decile_y' := cut(Y,quantile(Y,probs= 0:10/10), labels = 1:10, include.lowest = TRUE)]
+clean_data <- function(data, sex_var = "sexe",
+                       diploma_var = "findet",
+                       labor_income_var = "revenu",
+                       total_income_var = "revenu"){
+  
+  
+  data[, c('SEXE') := data.table::fifelse(get(sex_var)==1,
+                                       'Homme',
+                                       'Femme')]
+  data[, c('tr_diplome') := cut(get(diploma_var), breaks = c(min(get(diploma_var)), 16,18,21,25, max(get(diploma_var))), include.lowest = TRUE)]
+  data[, c('decile_w') := cut(get(labor_income_var),
+                           quantile(get(labor_income_var),
+                                    probs= 0:10/10),
+                           labels = 1:10, include.lowest = TRUE
+  )]
+  data[, c('decile_y') := cut(get(total_income_var),
+                           quantile(get(total_income_var),
+                                    probs= 0:10/10),
+                           labels = 1:10, include.lowest = TRUE
+  )]
+  
+  return(data)
+  
+}
+
+clean_data(simulations)
+
+EP_2015[,'y' := get('w') + r*get('PATFISOM')]
+EP_2015[, 'annee' := 2015]
+clean_data(EP_2015, sex_var = "SEXE", labor_income_var = "w", diploma_var = "AGFINETU",
+           total_income_var = "y")
 
 
-write_stats <- function(data, wealth_var = "wealth"){
+
+# COMPUTE SUMMARY STATS ---------
+
+write_stats <- function(data, wealth_var = "wealth",
+                        suffix = ""){
   
   
   data.table::fwrite(
-    simulations[annee == 2015, as.list(round(summary(get(wealth_var)))), by="SEXE"],
-    file = "./stats/stats_sexe.csv"
+    data[annee == 2015, as.list(round(summary(get(wealth_var)))), by="SEXE"],
+    file = sprintf("./stats/stats_sexe%s.csv", suffix)
   )
   
   
   
   data.table::fwrite(
-    simulations[annee == 2015, as.list(round(summary(get(wealth_var)))), by="tr_diplome"][order(tr_diplome)],
-    file = "./stats/stats_diplome.csv"
+    data[annee == 2015, as.list(round(summary(get(wealth_var)))), by="tr_diplome"][order(tr_diplome)],
+    file = sprintf("./stats/stats_diplome%s.csv", suffix)
   )
   
   
   data.table::fwrite(
-    simulations[annee == 2015, as.list(round(summary(get(wealth_var)))), keyby=decile_w][order(decile_w)],
-    file = "./stats/stats_income_labor.csv"
+    data[annee == 2015, as.list(round(summary(get(wealth_var)))), keyby=decile_w][order(decile_w)],
+    file = sprintf("./stats/stats_income_labor%s.csv", suffix)
   )
   
   data.table::fwrite(
-    simulations[annee == 2015, as.list(round(summary(get(wealth_var)))), keyby=decile_y][order(decile_y)],
-    file = "./stats/stats_income_total.csv"
+    data[annee == 2015, as.list(round(summary(get(wealth_var)))), keyby=decile_y][order(decile_y)],
+    file = sprintf("./stats/stats_income_total%s.csv", suffix)
   )
   
 }
 
 
-EP_2015
+write_stats(simulations)
+write_stats(EP_2015, wealth_var = "PATFISOM", suffix = "_EP15")
 
 
 # GRAPHIQUE PAR ANNEE --------------------------------
