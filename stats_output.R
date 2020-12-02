@@ -35,7 +35,7 @@ simulations <- capitulation::life_cycle_model(
 clean_data <- function(data, sex_var = "sexe",
                        diploma_var = "findet",
                        labor_income_var = "revenu",
-                       total_income_var = "revenu"){
+                       total_income_var = "Y"){
   
   
   data[, c('SEXE') := data.table::fifelse(get(sex_var)==1,
@@ -102,7 +102,7 @@ write_stats(simulations)
 write_stats(EP_2015, wealth_var = "PATFISOM", suffix = "_EP15")
 
 
-# GRAPHIQUE PAR ANNEE --------------------------------
+# GRAPHIQUES PAR ANNEE --------------------------------
 
 library(ggplot2)
 library(data.table)
@@ -118,6 +118,69 @@ p1 <- ggplot(tempdf[annee>=2009 & annee<=2040]) + geom_line(aes(x = annee, y = v
 ggsave(plot = p1, "./stats/plot_wealth_evolution.pdf")
 
 
+# capitulation::plot_K_age(simulations)
+# capitulation::plot_K_age(simulations)
+
+
+## INEGALITES =========================
+
+simul_copy <- data.table::copy(simulations)
+
+p2 <- capitulation::plot_gini(simul_copy,
+                        vars = c("revenu", "wealth", "Y"))
+ggsave(plot = p2, "./stats/gini_evolution.pdf", width = 12, height = 8)
+
+simul_copy <- data.table::copy(simulations)
+
+p3 <- capitulation::plot_top_share(simul_copy) +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Percentage total held by top10",
+       color = NULL)
+ggsave(plot = p3, "./stats/top10_evolution.pdf", width = 12, height = 8)
+
+simul_copy <- data.table::copy(simulations)
+
+p3b <- capitulation::plot_top_share(simul_copy, threshold = 0.99) +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Percentage total held by top1",
+       color = NULL)
+ggsave(plot = p3b, "./stats/top1_evolution.pdf", width = 12, height = 8)
+
+
+
+# ENDETTEMENT ======================
+
+simulations[,'endet' := get("wealth") < 0]
+
+
+ggplot(simulations[, .('taux_endet' = mean(endet)), by = "annee"]) +
+  geom_line(aes(x = annee, y = taux_endet)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  xlim(2009,2040) + labs(y = "Part individus endettés")
+
+
+simulations[annee == 2015, .('taux_endet' = mean(endet)) , by = "SEXE"]
+simulations[annee == 2015, .('taux_endet' = mean(endet)) , by = "tr_diplome"][order(tr_diplome)]
+
+ggplot2::ggplot(
+  simulations[annee == 2015, .('taux_endet' = mean(endet)) , by = "decile_w"][order(decile_w)]
+) + geom_point(aes(x = decile_w, y = taux_endet))
+
+ggplot2::ggplot(
+  simulations[annee == 2015, .('taux_endet' = mean(endet)) , by = "decile_y"][order(decile_y)]
+) + geom_point(aes(x = decile_y, y = taux_endet))
+
+
+# MOMENTS --------------------------
+
+
+
+
+
+
+
 
 
 
@@ -131,3 +194,6 @@ tempdf <- data.table::melt(tempdf, id.vars = c("annee","age"))
 
 ggplot(tempdf[annee>=2009 & annee<=2040 & age %between% c(25,80) & variable == "med"]) +
   geom_smooth(aes(x = age, y = value, color = factor(annee)), se = FALSE)
+
+
+
