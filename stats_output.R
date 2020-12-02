@@ -35,13 +35,17 @@ simulations <- capitulation::life_cycle_model(
 clean_data <- function(data, sex_var = "sexe",
                        diploma_var = "findet",
                        labor_income_var = "revenu",
-                       total_income_var = "Y"){
+                       total_income_var = "Y",
+                       year = 2015){
   
   
   data[, c('SEXE') := data.table::fifelse(get(sex_var)==1,
                                        'Homme',
                                        'Femme')]
   data[, c('tr_diplome') := cut(get(diploma_var), breaks = c(min(get(diploma_var)), 16,18,21,25, max(get(diploma_var))), include.lowest = TRUE)]
+  
+  if (year != 2015) return(data)  
+  
   data[, c('decile_w') := cut(get(labor_income_var),
                            quantile(get(labor_income_var),
                                     probs= 0:10/10),
@@ -57,6 +61,7 @@ clean_data <- function(data, sex_var = "sexe",
   
 }
 
+
 clean_data(simulations)
 
 EP_2015[,'y' := get('w') + r*get('PATFISOM')]
@@ -64,7 +69,16 @@ EP_2015[, 'annee' := 2015]
 clean_data(EP_2015, sex_var = "SEXE", labor_income_var = "w", diploma_var = "AGFINETU",
            total_income_var = "y")
 
+EP_2018[, 'annee' := 2018]
+clean_data(EP_2018, sex_var = "SEXE", year = 2018, diploma_var = "AGFINETU")
 
+
+EP_lon[,'y' := get('labor_income') + r*get('PATFISOM_2015')]
+EP_lon <- merge(EP_lon, EP_2015[,.SD,.SDcols = c("IDENTIND14","tr_diplome", "decile_w", "decile_y")],
+      by = c("IDENTIND14"))
+EP_lon[, c('SEXE') := data.table::fifelse(get('SEXE')==1,
+                                        'Homme',
+                                        'Femme')]
 
 # COMPUTE SUMMARY STATS ---------
 
@@ -142,7 +156,8 @@ p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate") +
   theme_bw() + 
   theme(legend.position = "bottom") +
   labs(x = "Year", y = "Percentage total held by top10",
-       color = NULL)
+       color = NULL) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ggsave(plot = p3, "./stats/top10_evolution_noneg.pdf", width = 12, height = 8)
 
 simul_copy <- data.table::copy(simulations)
@@ -150,7 +165,8 @@ p3 <- capitulation::plot_top_share(simul_copy, negative_values = "keep") +
   theme_bw() + 
   theme(legend.position = "bottom") +
   labs(x = "Year", y = "Percentage total held by top10",
-       color = NULL)
+       color = NULL) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ggsave(plot = p3, "./stats/top10_evolution.pdf", width = 12, height = 8)
 
 
@@ -159,7 +175,9 @@ p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate") +
   theme_bw() + 
   theme(legend.position = "bottom") +
   labs(x = "Year", y = "Percentage total held by top10",
-       color = NULL)
+       color = NULL) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
 ggsave(plot = p3, "./stats/top10_evolution_noneg.pdf", width = 12, height = 8)
 
 simul_copy <- data.table::copy(simulations)
@@ -167,7 +185,9 @@ p3 <- capitulation::plot_top_share(simul_copy, negative_values = "keep") +
   theme_bw() + 
   theme(legend.position = "bottom") +
   labs(x = "Year", y = "Percentage total held by top10",
-       color = NULL)
+       color = NULL) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
 ggsave(plot = p3, "./stats/top10_evolution.pdf", width = 12, height = 8)
 
 
@@ -230,6 +250,24 @@ moment1 <- gridExtra::grid.arrange(
 ggsave(plot = moment1, "./stats/moment1.pdf", width = 18, height = 10)
 
 
+## MOMENT 1 (BY=.) =================
+
+
+# moment1_sex <- wealthyR:::plot_moment_age_facet(EP_2015, EP_2018, simulations = simulations,
+#                                  by_survey = "AGE", by_simulation = "age",
+#                                  scale = "log",
+#                                  facets_vars = "SEXE")   +
+#   scale_fill_manual(values = c('microsimulation' = 'black', 
+#                                'survey' = 'royalblue')) + theme_bw() +
+#   theme(legend.position = "top")
+# ggsave(plot = moment1_sex, "./stats/moment1_by_sex.pdf", width = 12, height = 8)
+
+
+
+
+
+
+
 
 ## MOMENT 2 ================
 
@@ -241,12 +279,67 @@ moment2 <- wealthyR::plot_moment_dK(
   theme(legend.position = "bottom")
 
 
-ggsave(plot = moment1, "./stats/moment2.pdf", width = 12, height = 8)
+ggsave(plot = moment2, "./stats/moment2.pdf", width = 12, height = 8)
 
 
 ## MOMENT 2 BY=. ================
 
 ## SEXE +++++++++
+
+moment2_sex <- wealthyR:::plot_moment_dK_facet(
+  EP_lon = EP_lon, simulations = simulations,
+  scale = "log", xaxis = "tr_age_2015", facets_vars = "SEXE")
+
+moment2_sex <- moment2_sex +
+  scale_color_manual(values = c('simulation' = 'black', 
+                                  'survey' = 'royalblue')) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+ggsave(plot = moment2_sex, "./stats/moment2_by_sex.pdf", width = 12, height = 8)
+
+
+## diplome ++++
+
+moment2_diplome <- wealthyR:::plot_moment_dK_facet(
+  EP_lon = EP_lon[!is.na(tr_diplome)], simulations = simulations,
+  scale = "log", xaxis = "tr_age_2015", facets_vars = "tr_diplome")
+
+moment2_diplome <- moment2_diplome +
+  scale_color_manual(values = c('simulation' = 'black', 
+                                'survey' = 'royalblue')) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+ggsave(plot = moment2_diplome, "./stats/moment2_by_diplome.pdf", width = 12, height = 8)
+
+
+## income decile ++++
+
+
+moment2_decile_labor <- wealthyR:::plot_moment_dK_facet(
+  EP_lon = EP_lon, simulations = simulations,
+  scale = "log", xaxis = "tr_age_2015", facets_vars = "decile_w")
+
+moment2_decile_labor <- moment2_decile_labor + scale_color_manual(values = c('simulation' = 'black', 
+                                'survey' = 'royalblue')) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+ggsave(plot = moment2_decile_labor, "./stats/moment2_by_decile_labor.pdf", width = 20, height = 20)
+
+
+
+moment2_decile_total <- wealthyR:::plot_moment_dK_facet(
+  EP_lon = EP_lon, simulations = simulations,
+  scale = "log", xaxis = "tr_age_2015", facets_vars = "decile_y")
+
+moment2_decile_total <- moment2_decile_total + scale_color_manual(values = c('simulation' = 'black', 
+                                                                             'survey' = 'royalblue')) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+ggsave(plot = moment2_decile_total, "./stats/moment2_by_decile_total.pdf", width = 20, height = 20)
 
 
 
