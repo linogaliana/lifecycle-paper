@@ -9,3 +9,6 @@ README.html
 *.rds
 inst/*
 *.html
+
+*.csv
+*.pdf

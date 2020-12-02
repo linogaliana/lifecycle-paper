@@ -48,6 +48,7 @@ if (!file.exists("~/estimation/tempfile.rds")){
 }
 
 source("functions.R")
+library(data.table)
 
 population <- readRDS("~/estimation/tempfile.rds")
 data <- readRDS("~/estimation/data.rds")
