@@ -83,11 +83,28 @@ EP_lon[, c('SEXE') := data.table::fifelse(get('SEXE')==1,
 # COMPUTE SUMMARY STATS ---------
 
 write_stats <- function(data, wealth_var = "wealth",
+                        pond = NULL,
                         suffix = ""){
   
+  mysummary <- function(x, weights = NULL, ...){
+    return(
+      list('Min.' = round(min(x, ...)),
+           '1st Qu.' = round(Hmisc::wtd.quantile(x, weights = weights, probs = 0.25, ...)),
+           'Median' = round(Hmisc::wtd.quantile(x, weights = weights, probs = 0.5, ...)),
+           'Mean' = round(Hmisc::wtd.mean(x, weights = weights, ...)),
+           '3rd Qu.' = round(Hmisc::wtd.quantile(x, weights = weights, probs = 0.75, ...)),
+           'Max' = round(max(x, ...))
+           )
+    )
+  }
+  
+  if (is.null(pond)){
+    pond <- "tempvar"
+    data[, c(pond) := 1L]
+  }
   
   data.table::fwrite(
-    data[annee == 2015, as.list(round(summary(get(wealth_var)))), by="SEXE"],
+    data[annee == 2015, mysummary(get(wealth_var), weights = get(pond)), by="SEXE"],
     file = sprintf("./stats/stats_sexe%s.csv", suffix)
   )
   
@@ -109,11 +126,13 @@ write_stats <- function(data, wealth_var = "wealth",
     file = sprintf("./stats/stats_income_total%s.csv", suffix)
   )
   
+  if (pond == "tempvar") data[, c(pond) := NULL]
+  
 }
 
 
 write_stats(simulations)
-write_stats(EP_2015, wealth_var = "PATFISOM", suffix = "_EP15")
+write_stats(EP_2015, wealth_var = "PATFISOM", suffix = "_EP15", pond = "POND")
 
 
 # GRAPHIQUES PAR ANNEE --------------------------------
