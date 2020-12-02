@@ -68,7 +68,7 @@ gamma <- NULL
 # beta_0 <- runif(1, min = 0.5, max = 1.5)
 beta_0 <- 0.9
 # gamma_0 <- runif(1, min = 0.2, max = 5)
-gamma_0 <- 0.5
+gamma_0 <- 0.6
 
 menages_structural2[,'AGE' := age]
 
@@ -113,7 +113,7 @@ moments <- wealthyR:::label_moments(
 
 rmarkdown::render(
   'automatic_report.Rmd',
-  output_file = "overidentification_moment1_rfixed",
+  output_file = "overidentification_specif_type",
   envir = new.env(),
   params = list('r' = {if(is.null(r)) output$estimates$theta_hat['r'] else r},
                 'beta' = {if(is.null(beta)) output$estimates$theta_hat['beta'] else beta},
