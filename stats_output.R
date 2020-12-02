@@ -17,7 +17,6 @@ simulations <- capitulation::life_cycle_model(
 simulations[annee == 2015, as.list(summary(wealth)), by="sexe"]
 
 simulations[, 'tr_diplome' := cut(findet, breaks = c(min(findet), 16,18,21,25, max(findet)), include.lowest = TRUE)]
-simulations[, 'decile_w' := cut(revenu,quantile(revenu,probs= 0:10/10), labels = 1:10, include.lowest = TRUE)]
 simulations[, 'decile_y' := cut(Y,quantile(Y,probs= 0:10/10), labels = 1:10, include.lowest = TRUE)]
 
 
@@ -25,7 +24,7 @@ simulations[annee == 2015, as.list(summary(wealth)), by="sexe"]
 simulations[annee == 2015, as.list(summary(wealth)), by="tr_diplome"][order(tr_diplome)]
 
 simulations[annee == 2015, as.list(round(summary(wealth))), keyby=decile_w][order(decile_w)]
-simulations[annee == 2015, as.list(round(summary(wealth))), keyby=decile_y][order(decile_y)]
+simulations[annee == 2015, as.list(round(summary(wealth)), keyby=decile_y][order(decile_y)]
 
 
 tempdf <- simulations[,.('med' = median(wealth),
