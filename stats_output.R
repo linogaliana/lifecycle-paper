@@ -8,9 +8,11 @@ EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
 
 
-beta  <- 0.9724306
-gamma <- 0.8435442
+beta  <- 0.9720502
+gamma <- 1.07555
 r <- 0.03
+
+
 
 # SIMULATE MODEL -----------------------------
 
@@ -40,21 +42,21 @@ clean_data <- function(data, sex_var = "sexe",
   
   
   data[, c('SEXE') := data.table::fifelse(get(sex_var)==1,
-                                       'Homme',
-                                       'Femme')]
+                                          'Male',
+                                          'Female')]
   data[, c('tr_diplome') := cut(get(diploma_var), breaks = c(min(get(diploma_var)), 16,18,21,25, max(get(diploma_var))), include.lowest = TRUE)]
   
   if (year != 2015) return(data)  
   
   data[, c('decile_w') := cut(get(labor_income_var),
-                           quantile(get(labor_income_var),
-                                    probs= 0:10/10),
-                           labels = 1:10, include.lowest = TRUE
+                              quantile(get(labor_income_var),
+                                       probs= 0:10/10),
+                              labels = 1:10, include.lowest = TRUE
   )]
   data[, c('decile_y') := cut(get(total_income_var),
-                           quantile(get(total_income_var),
-                                    probs= 0:10/10),
-                           labels = 1:10, include.lowest = TRUE
+                              quantile(get(total_income_var),
+                                       probs= 0:10/10),
+                              labels = 1:10, include.lowest = TRUE
   )]
   
   return(data)
@@ -75,10 +77,10 @@ clean_data(EP_2018, sex_var = "SEXE", year = 2018, diploma_var = "AGFINETU")
 
 EP_lon[,'y' := get('labor_income') + r*get('PATFISOM_2015')]
 EP_lon <- merge(EP_lon, EP_2015[,.SD,.SDcols = c("IDENTIND14","tr_diplome", "decile_w", "decile_y")],
-      by = c("IDENTIND14"))
+                by = c("IDENTIND14"))
 EP_lon[, c('SEXE') := data.table::fifelse(get('SEXE')==1,
-                                        'Homme',
-                                        'Femme')]
+                                          'Homme',
+                                          'Femme')]
 
 # COMPUTE SUMMARY STATS ---------
 
@@ -94,7 +96,7 @@ write_stats <- function(data, wealth_var = "wealth",
            'Mean' = round(Hmisc::wtd.mean(x, weights = weights, ...)),
            '3rd Qu.' = round(Hmisc::wtd.quantile(x, weights = weights, probs = 0.75, ...)),
            'Max' = round(max(x, ...))
-           )
+      )
     )
   }
   
@@ -135,6 +137,56 @@ write_stats(simulations)
 write_stats(EP_2015, wealth_var = "PATFISOM", suffix = "_EP15", pond = "POND")
 
 
+cat(
+  tablelight:::stack_summary(object = list(EP_2015, EP_2015, EP_2015), x_vars = "PATFISOM", weight_vars = "POND",
+                             multirow_labels = c("Whole population","By sex:","By labor income decile:"), 
+                             by = c(NA, "SEXE", "decile_w"),
+                             add.lines = "Summary statistics are computed using survey weights",
+                             caption = "Summary statistics on wealth survey (\\textit{Enquête Patrimoine})",
+                             label = "tab: summary stat EP 2015",
+                             add_rules = TRUE
+  ),
+  sep = "\n"
+)
+
+cat(
+  tablelight:::stack_summary(object = list(simulations[annee==2015],
+                                           simulations[annee==2015],
+                                           simulations[annee==2015]), x_vars = "wealth",
+                             multirow_labels = c("Whole population","By sex:","By labor income decile:"), 
+                             by = c(NA, "SEXE", "decile_w"),
+                             caption = "Summary statistics predicted by our model (year : 2015)",
+                             label = "tab: summary stat microsimulated wealth",
+                             add_rules = TRUE
+  ),
+  sep = "\n"
+)
+
+
+
+
+
+
+# MODELE HERITAGE ------
+
+model <- readRDS("modele.rds")
+cat(
+  tablelight::light_table(
+    model, type = "latex", title = "Heritage: estimating equation",
+    label = "tab:heritage",
+    dep.var.labels = "Amount inherited",
+    column.labels = "\\textit{Model in log}",
+    covariate.labels = c("Log income","Age",
+                         "Age (squared, divided by 100)", "Graduation age",
+                         "Graduation age (squared, divided by 100)")
+  ), sep = "\n"
+)
+
+
+
+## Faire un truc propre pour update papier
+
+
 # GRAPHIQUES PAR ANNEE --------------------------------
 
 library(ggplot2)
@@ -159,14 +211,14 @@ ggsave(plot = p1, "./stats/plot_wealth_evolution.pdf")
 
 simul_copy <- data.table::copy(simulations)
 p2 <- capitulation::plot_gini(simul_copy,
-                        vars = c("revenu", "wealth", "Y"),
-                        negative_values = "truncate")
+                              vars = c("revenu", "wealth", "Y"),
+                              negative_values = "truncate")
 ggsave(plot = p2, "./stats/gini_evolution_noneg.pdf", width = 12, height = 8)
 
 simul_copy <- data.table::copy(simulations)
 p2b <- capitulation::plot_gini(simul_copy,
-                              vars = c("revenu", "wealth", "Y"),
-                              negative_values = "keep")
+                               vars = c("revenu", "wealth", "Y"),
+                               negative_values = "keep")
 ggsave(plot = p2b, "./stats/gini_evolution.pdf", width = 12, height = 8)
 
 
@@ -260,7 +312,7 @@ moment1 <- gridExtra::grid.arrange(
   wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = simulations,
                             by_survey = "AGE", by_simulation = 'age', scale = "log")$fit[[1]] +
     scale_fill_manual(values = c('microsimulation' = 'black', 
-                                   'survey' = 'royalblue')) + theme_bw() +
+                                 'survey' = 'royalblue')) + theme_bw() +
     theme(legend.position = "top"),
   wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = simulations,
                             by_survey = "AGEPR", by_simulation = 'age', scale = "log")$fit[[2]]
@@ -294,7 +346,7 @@ moment2 <- wealthyR::plot_moment_dK(
   EP_lon = EP_lon, simulations = simulations,
   scale = "log", by = "tr_age_2015"
 ) + scale_color_manual(values = c('simulation' = 'black', 
-                               'survey' = 'royalblue')) + theme_bw() +
+                                  'survey' = 'royalblue')) + theme_bw() +
   theme(legend.position = "bottom")
 
 
@@ -311,7 +363,7 @@ moment2_sex <- wealthyR:::plot_moment_dK_facet(
 
 moment2_sex <- moment2_sex +
   scale_color_manual(values = c('simulation' = 'black', 
-                                  'survey' = 'royalblue')) +
+                                'survey' = 'royalblue')) +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -341,7 +393,7 @@ moment2_decile_labor <- wealthyR:::plot_moment_dK_facet(
   scale = "log", xaxis = "tr_age_2015", facets_vars = "decile_w")
 
 moment2_decile_labor <- moment2_decile_labor + scale_color_manual(values = c('simulation' = 'black', 
-                                'survey' = 'royalblue')) +
+                                                                             'survey' = 'royalblue')) +
   theme_bw() +
   theme(legend.position = "bottom")
 
