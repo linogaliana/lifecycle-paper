@@ -68,7 +68,7 @@ gamma <- NULL
 # beta_0 <- runif(1, min = 0.5, max = 1.5)
 beta_0 <- 0.9
 # gamma_0 <- runif(1, min = 0.2, max = 5)
-gamma_0 <- 3
+gamma_0 <- 0.5
 
 menages_structural2[,'AGE' := age]
 
@@ -108,6 +108,20 @@ moments <- wealthyR:::label_moments(
   select_moments = select_moments,
   by = c("AGE", NULL)
 )
+
+
+tablelight::view_html(tablelight::light_table(output, type = "html", covariate.labels = c("$\\beta$", "$\\gamma$"),
+                                              dep.var.labels = "\\textsc{Estimates}", column.labels = NULL))
+
+
+
+# cat(
+#   tablelight::light_table(output, type = "latex", covariate.labels = c("$\\beta$", "$\\gamma$"),
+#                         dep.var.labels = "\\textsc{Estimates}", column.labels = NULL,
+#                         title = "Estimation results", label = "tab: estimation table"),
+#   sep = "\n",
+#   file = "~/5cece6ccccdef65e149a3774/tables/resultsGMM.tex"
+# )
 
 
 
