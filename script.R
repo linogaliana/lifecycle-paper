@@ -37,7 +37,8 @@ saveRDS(data, "~/estimation/data.rds")
 
 data_prediction <- capitulation::prepare_data(
   path_data = "~",
-  inheritance_model = inheritance_model
+  inheritance_model = inheritance_model,
+  time_0 = "birth"
 )
 # aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
 #                   bucket = "groupe-788")

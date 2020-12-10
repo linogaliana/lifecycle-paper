@@ -8,6 +8,7 @@ EP_lon <- data[['EP_lon']]
 beta  <- 0.9742522
 gamma.parameters <- 0.7034394
 r <- 0.03
+
 gamma <- "gamma ~ 0 + SEXE"
 
 population[,'SEXE' := as.numeric(as.character(get("SEXE")))]
