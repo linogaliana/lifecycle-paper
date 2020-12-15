@@ -8,14 +8,16 @@ EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
 
 
-beta  <- 0.9720502
-gamma <- 1.07555
+beta  <- 0.975
+gamma <- 0.678
 r <- 0.03
 
 
 
 # SIMULATE MODEL -----------------------------
 
+population2 <- data.table::copy(population)
+population2 <- population2[age>findet]
 
 simulations <- capitulation::life_cycle_model(
   population,
@@ -31,6 +33,22 @@ simulations <- capitulation::life_cycle_model(
   get_capital_income = TRUE,
   additional_vars = c("tr_age_2015","sexe","findet"))
 
+simulations2 <- capitulation::life_cycle_model(
+  population2,
+  wealthvar_survey = "K_observed",
+  r = r,
+  beta = beta,
+  gamma = gamma,
+  observation_year = 2009,
+  income_var = "revenu",
+  Hgiven_var = "hg",
+  Hreceived_var = "hr",
+  return_last = FALSE,
+  get_capital_income = TRUE,
+  additional_vars = c("tr_age_2015","sexe","findet"))
+
+
+capitulation::plot_K_age(simulations)
 
 # UN PEU DE DATA CLEANING --------------------
 

@@ -104,6 +104,7 @@ class(output) <- c("mindist", class(output))
 
 tablelight::view_html(tablelight::light_table(output, type = "html"))
 
+
 moments <- wealthyR:::label_moments(
   N_moments = number_moments,
   data = EP_lon,
@@ -112,19 +113,23 @@ moments <- wealthyR:::label_moments(
   by = c("AGE", NULL)
 )
 
+class(output) <- c("mindist", class(output))
+
+saveRDS(output, "~/output.rds")
+
 
 tablelight::view_html(tablelight::light_table(output, type = "html", covariate.labels = c("$\\beta$", "$\\gamma$"),
                                               dep.var.labels = "\\textsc{Estimates}", column.labels = NULL))
 
 
 
-# cat(
-#   tablelight::light_table(output, type = "latex", covariate.labels = c("$\\beta$", "$\\gamma$"),
-#                         dep.var.labels = "\\textsc{Estimates}", column.labels = NULL,
-#                         title = "Estimation results", label = "tab: estimation table"),
-#   sep = "\n",
-#   file = "~/5cece6ccccdef65e149a3774/tables/resultsGMM.tex"
-# )
+cat(
+  tablelight::light_table(output, type = "latex", covariate.labels = c("$\\beta$", "$\\gamma$"),
+                        dep.var.labels = "\\textsc{Estimates}", column.labels = NULL,
+                        title = "Estimation results", label = "tab: estimation table"),
+  sep = "\n",
+  file = "~/5cece6ccccdef65e149a3774/tables/resultsGMM.tex"
+)
 
 
 
