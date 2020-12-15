@@ -50,18 +50,20 @@ clean_data <- function(data, sex_var = "sexe",
   
   data[, c('decile_w') := cut(get(labor_income_var),
                               quantile(get(labor_income_var),
-                                       probs= 0:10/10),
+                                       probs= 0:10/10) + seq_along(0:10)*.Machine$double.eps,
                               labels = 1:10, include.lowest = TRUE
   )]
   data[, c('decile_y') := cut(get(total_income_var),
                               quantile(get(total_income_var),
-                                       probs= 0:10/10),
+                                       probs= 0:10/10)  + seq_along(0:10)*.Machine$double.eps,
                               labels = 1:10, include.lowest = TRUE
   )]
   
   return(data)
   
 }
+
+simulations <- simulations[get("age") > get("findet")]
 
 
 clean_data(simulations)
@@ -144,7 +146,8 @@ cat(
                              add.lines = "Summary statistics are computed using survey weights",
                              caption = "Summary statistics on wealth survey (\\textit{Enquête Patrimoine})",
                              label = "tab: summary stat EP 2015",
-                             add_rules = TRUE
+                             add_rules = TRUE,
+                             stats = c("mean","1Q",'median','3Q')
   ),
   sep = "\n"
 )
@@ -157,7 +160,8 @@ cat(
                              by = c(NA, "SEXE", "decile_w"),
                              caption = "Summary statistics predicted by our model (year : 2015)",
                              label = "tab: summary stat microsimulated wealth",
-                             add_rules = TRUE
+                             add_rules = TRUE,
+                             stats = c("mean","1Q",'median','3Q')
   ),
   sep = "\n"
 )

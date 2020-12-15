@@ -69,7 +69,7 @@ gamma <- NULL
 # beta_0 <- runif(1, min = 0.5, max = 1.5)
 beta_0 <- 0.9
 # gamma_0 <- runif(1, min = 0.2, max = 5)
-gamma_0 <- 0.5
+gamma_0 <- 0.6
 
 menages_structural2[,'AGE' := age]
 
@@ -100,7 +100,9 @@ output <- mindist::estimation_theta(
   method = "Nelder-Mead"
 )
 
+class(output) <- c("mindist", class(output))
 
+tablelight::view_html(tablelight::light_table(output, type = "html"))
 
 moments <- wealthyR:::label_moments(
   N_moments = number_moments,
