@@ -1,10 +1,12 @@
 threshold = 0.9
 
-compute_top <- function(indiv, xvar){
+compute_top <- function(indiv, xvar, pond = NULL){
   #indiv2 <- indiv[get(age_var)>=get(findet_var)]
   indiv2 <- data.table::copy(indiv)
   indiv2[,c("top_labor") := NULL]
-  indiv2[,c("top_labor") := lapply(.SD, function(x) x > quantile(x, na.rm = TRUE, probs = threshold)),
+  indiv2[,c("top_labor") := lapply(.SD, function(x) x > Hmisc:::wtd.quantile(x, na.rm = TRUE,
+                                                                             probs = threshold,
+                                                                             weights = if (!is.null(pond)) get(pond) else NULL)),
          .SDcols = xvar, by = "annee"]
   indiv2[,'top_labor' := as.character(data.table::fifelse(get('top_labor'),
                                                           sprintf('top%s labor income', 100*(1 - threshold)),
@@ -29,6 +31,11 @@ df1[, 'annee' := 2015]
 compute_top(df1, 'incomevar')
 compute_top(df1_indiv, 'incomevar')
 
+df1_indiv[,"POND2" := get('POND')/N_adulte]
+df1[,"POND2" := get('POND')/N_adulte]
+compute_top(df1, 'incomevar', "POND2")
+compute_top(df1_indiv, 'incomevar', "POND2")
+
 
 df1_indiv[,'yhousehold' := ZSALAIRES + ZRETRAITES + ZCHOMAGE]
 df1_indiv[,'yindiv' := ZSALAIRES_I + ZRETRAITES_I + ZCHOMAGE_I]
@@ -43,9 +50,6 @@ cor(champs_destinie$salaire_indiv, champs_destinie$salaire_conjoint)
 
 
 library(ggplot2)
-ggplot(champs_destinie[sample(0.1*.N)]) +
-  geom_point(aes(x = log(1+salaire_indiv), y = log(1+salaire_conjoint))) +
-  geom_abline(intercept = 0, slope = 1, color = "red")
   
 
 ggplot(champs_ep[sample(0.1*.N)]) +
@@ -67,20 +71,41 @@ compute_top(household_table[annee == 2015], 'salaire')
 
 
 
-indiv[,'y_individualized' := get('salaire_tot')/get("nspouses")]
 
 # DESTINIE ---------
 
 # INITIAL INCOME
+indiv[,'y_individualized' := get('salaire_tot')/get("nspouses")]
 compute_top(indiv[annee == 2015], 'salaire_indiv')
+
+# NOTRE NOTION REVENU
 compute_top(indiv[annee == 2015], 'y_individualized')
 
 
 compute_top(indiv[annee == 2015 & age > findet], 'salaire_indiv')
 compute_top(indiv[annee == 2015 & age > findet], 'y_individualized')
 
-cor(indiv$salaire_indiv, indiv$salaire_conjoint)
-cor(df1_indiv$yindiv, df1_indiv$yconjoint)
+
+champs_destinie <- indiv[annee == 2015 & age > findet & nspouses>1]
+cor(champs_destinie$salaire_indiv, champs_destinie$salaire_conjoint)
+cor(champs_destinie$salaire_indiv, champs_destinie$salaire_tot)
+
+
+ggplot(champs_destinie[sample(0.1*.N)]) +
+  geom_point(aes(x = log(1+salaire_indiv), y = log(1+salaire_conjoint))) +
+  geom_abline(intercept = 0, slope = 1, color = "red")
+
 
 # ENQUETE PATRIMOINE ------
+compute_top(df1_indiv, 'yindiv')
+compute_top(df1_indiv, 'yhousehold')
 
+champs_ep <- df1_indiv[AGE > AGFINETU & N_adulte > 1]
+
+cor(champs_ep$yindiv, champs_ep$yconjoint)
+cor(champs_ep$yindiv, champs_ep$yhousehold)
+
+
+ggplot(champs_ep[sample(0.1*.N)]) +
+  geom_point(aes(x = log(1+yindiv), y = log(1+yconjoint))) +
+  geom_abline(intercept = 0, slope = 1, color = "red")
