@@ -2,7 +2,7 @@ create_inheritance_model <- function(path_survey =  "~/Enquete Patrimoine",
                                      formula = "MTHER ~ lw + age + I((age^2)/100) + AGFINETU + I((AGFINETU^2)/100)"){
   
   EP_data <- wealthyR:::prepare_inheritance_sample(
-    path_survey =  "~/Enquete Patrimoine"
+    path_survey =  path_survey
   )
   
   # MODEL 1: INTERVAL REGRESSION ---------------
@@ -36,8 +36,8 @@ construct_EP <- function(path_data = "~"){
   macro <- capitulation::macro
   
   
-  EP_2018 <- wealthyR::individualize_EP(path_data = "~", year = 2018)
-  EP_2015 <- wealthyR::individualize_EP(path_data = "~", year = 2015)
+  EP_2018 <- wealthyR::individualize_EP(path_data = path_data, year = 2018)
+  EP_2015 <- wealthyR::individualize_EP(path_data = path_data, year = 2015)
   
   
   # +++++++++++++++++++++++++++++++++++++++++++++++
