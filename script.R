@@ -1,5 +1,5 @@
 set.seed(12345)
-system("chmod +x microCI/install.sh && microCI/install.sh")
+#system("chmod +x microCI/install.sh && microCI/install.sh")
 
 source("functions.R")
 
@@ -7,36 +7,39 @@ library(tablelight)
 
 
 
-unzip("~/Destinie.zip", exdir="~")
-unzip("~/Enquete Patrimoine.zip", exdir="~")
+unzip("../Destinie.zip", exdir="..")
+unzip("../Enquete Patrimoine.zip", exdir="..")
 
 
-inheritance_model <- create_inheritance_model()
+inheritance_model <- create_inheritance_model(
+  path_survey =  "../Enquete Patrimoine"
+)
 
 
 summary(inheritance_model)
 
 saveRDS(
-  inheritance_model, file = "~/estimation/modele.rds"
+  inheritance_model, file = "./modele.rds"
 )
 
 
 # PART 2 PREPARATION DONNEES ---------------
 
-path_data <- "~"
+path_data <- ".."
 
 
-data <- construct_EP()
+data <- construct_EP(path_data)
 EP_2015 <- data[['EP_2015']]
 EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
 
 
-saveRDS(data, "~/estimation/data.rds")
+saveRDS(data, "./data.rds")
+
 
 
 data_prediction <- capitulation::prepare_data(
-  path_data = "~",
+  path_data = "..",
   inheritance_model = inheritance_model,
   time_0 = "birth"
 )
@@ -48,7 +51,7 @@ menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
 menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
 menages_structural2[, 'AGE' := get('age')]
-saveRDS(menages_structural2, file = "~/estimation/tempfile.rds")  
+saveRDS(menages_structural2, file = "./tempfile.rds")  
 
 
 # ESTIMATION ---------------
@@ -81,7 +84,7 @@ output <- mindist::estimation_theta(
   beta = beta,
   r = r,
   gamma = gamma,
-  model_function = mindist:::loss_function,
+  # model_function = mindist:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
   approach = estimation_method,
   select_moments = select_moments,
