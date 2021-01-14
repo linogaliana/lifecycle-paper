@@ -1,15 +1,15 @@
 
 # PARAMETERS GLOBAUX -------------------------
 
-population <- readRDS(file = "~/estimation/tempfile.rds")
-data <- readRDS("~/estimation/data.rds")
+population <- readRDS(file = "tempfile.rds")
+data <- readRDS("data.rds")
 EP_2015 <- data[['EP_2015']]
 EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
 
 
 beta  <- 0.975
-gamma <- 0.678
+gamma <- 0.8428378
 r <- 0.03
 
 
