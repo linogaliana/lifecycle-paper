@@ -1,9 +1,11 @@
 create_inheritance_model <- function(path_survey =  "~/Enquete Patrimoine",
-                                     formula = "MTHER ~ lw + age + I((age^2)/100) + AGFINETU + I((AGFINETU^2)/100)"){
+                                     formula = "MTHER ~ lw + tr_age + SEXE + tr_agfinetu",
+                                     search_iter = 10){
   
   EP_data <- wealthyR:::prepare_inheritance_sample(
     path_survey =  path_survey
   )
+  
   
   # MODEL 1: INTERVAL REGRESSION ---------------
   
@@ -13,19 +15,20 @@ create_inheritance_model <- function(path_survey =  "~/Enquete Patrimoine",
   bounds <- c(3,8,15,30,60,100,150,200,250)*1000
   lbounds <- log(bounds)
   
-  estim_data <- inheritance_data[get('revenu')>0]
+  estim_data <- inheritance_data[get('income')>0]
   
   estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
   estim_data <- estim_data[order(MTHER)]
   estim_data[,'age' := get('AGE')]
   # estim_data[,'findet' := get('AGFINETU')]
   
-  inheritance_model <- REtage::ordered_model_threshold(
-    data = data.frame(estim_data[order(MTHER)]),
-    formula = "MTHER ~ lw + age + I((age^2)/100) + AGFINETU + I((AGFINETU^2)/100)",
-    link = "probit",
-    constantSD = TRUE,
-    thresholds = lbounds
+  inheritance_model <- oglm::oglmx(
+    formulaMEAN = formula,
+    formulaSD = NULL,
+    data = estim_data,
+    threshparam = lbounds,
+    start_method = "search",
+    search_iter = search_iter
   )
   
   return(inheritance_model)
