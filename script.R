@@ -21,7 +21,7 @@ summary(inheritance_model)
 saveRDS(
   inheritance_model, file = "./modele.rds"
 )
-
+inheritance_model <- readRDS("./modele.rds")
 
 # PART 2 PREPARATION DONNEES ---------------
 
@@ -53,7 +53,7 @@ menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
 menages_structural2[, 'AGE' := get('age')]
 saveRDS(menages_structural2, file = "./tempfile.rds")  
 
-
+menages_structural2 <- readRDS("./tempfile.rds")
 # ESTIMATION ---------------
 
 number_moments <- 2L
@@ -66,7 +66,7 @@ parameters_estimation <- list("number_moments" = number_moments,
                               "method" = estimation_method)
 
 beta <- NULL
-r <- 0.03
+r <- 0.02
 gamma <- NULL
 
 # beta_0 <- runif(1, min = 0.5, max = 1.5)
@@ -103,6 +103,7 @@ output <- mindist::estimation_theta(
   method = "Nelder-Mead"
 )
 
+
 class(output) <- c("mindist", class(output))
 
 tablelight::view_html(tablelight::light_table(output, type = "html"))
@@ -115,8 +116,6 @@ moments <- wealthyR:::label_moments(
   select_moments = select_moments,
   by = c("AGE", NULL)
 )
-
-class(output) <- c("mindist", class(output))
 
 saveRDS(output, "~/output.rds")
 
