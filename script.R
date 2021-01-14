@@ -117,7 +117,7 @@ moments <- wealthyR:::label_moments(
   by = c("AGE", NULL)
 )
 
-saveRDS(output, "~/output.rds")
+saveRDS(output, "./output.rds")
 
 
 tablelight::view_html(tablelight::light_table(output, type = "html", covariate.labels = c("$\\beta$", "$\\gamma$"),
