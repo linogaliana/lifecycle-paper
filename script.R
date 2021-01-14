@@ -35,7 +35,7 @@ EP_lon <- data[['EP_lon']]
 
 
 saveRDS(data, "./data.rds")
-
+data <- readRDS("./data.rds")
 
 
 data_prediction <- capitulation::prepare_data(
@@ -66,7 +66,7 @@ parameters_estimation <- list("number_moments" = number_moments,
                               "method" = estimation_method)
 
 beta <- NULL
-r <- 0.02
+r <- 0.03
 gamma <- NULL
 
 # beta_0 <- runif(1, min = 0.5, max = 1.5)
