@@ -1,5 +1,5 @@
 set.seed(12345)
-system("chmod +x microCI/install.sh && microCI/install.sh")
+#system("chmod +x microCI/install.sh && microCI/install.sh")
 
 source("functions.R")
 
@@ -7,51 +7,69 @@ library(tablelight)
 
 
 
-unzip("~/Destinie.zip", exdir="~")
-unzip("~/Enquete Patrimoine.zip", exdir="~")
+unzip("../Destinie.zip", exdir="..")
+unzip("../Enquete Patrimoine.zip", exdir="..")
 
 
-inheritance_model <- create_inheritance_model()
+inheritance_model <- create_inheritance_model(
+  path_survey =  "../Enquete Patrimoine"
+)
 
 
 summary(inheritance_model)
 
 saveRDS(
-  inheritance_model, file = "~/estimation/modele.rds"
+  inheritance_model, file = "./modele.rds"
 )
-
+inheritance_model <- readRDS("./modele.rds")
 
 # PART 2 PREPARATION DONNEES ---------------
 
-path_data <- "~"
+path_data <- ".."
 
 
-data <- construct_EP()
+data <- construct_EP(path_data)
 EP_2015 <- data[['EP_2015']]
 EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
 
 
-saveRDS(data, "~/estimation/data.rds")
+saveRDS(data, "./data.rds")
+data <- readRDS("./data.rds")
 
 
 data_prediction <- capitulation::prepare_data(
-  path_data = "~",
+  path_data = "..",
   inheritance_model = inheritance_model,
   time_0 = "birth"
 )
 # aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
 #                   bucket = "groupe-788")
 
-data_prediction <- data_prediction[age>findet]
-
 menages_structural2 <- data.table::copy(data_prediction)
 menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
 menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
 menages_structural2[, 'AGE' := get('age')]
-saveRDS(menages_structural2, file = "~/estimation/tempfile.rds")  
+saveRDS(menages_structural2, file = "./tempfile.rds")  
 
+
+
+menages_structural2 <- readRDS("./tempfile.rds")
+
+
+# ESTIMATION ---------------
+
+
+
+number_moments <- 2L
+scale_wealth <- "log"
+select_moments <- NULL
+estimation_method <- "two_step"
+parameters_estimation <- list("number_moments" = number_moments,
+                              "scale_wealth" = scale_wealth,
+                              "select_moments" = select_moments,
+                              "method" = estimation_method)
 
 
 # ESTIMATION ---------------
@@ -93,14 +111,13 @@ output <- mindist::estimation_theta(
   beta = beta,
   r = r,
   gamma = "gamma ~ SEXE",
-  model_function = mindist:::loss_function,
   prediction_function = wealthyR:::model_capitulation,
   approach = estimation_method,
   select_moments = select_moments,
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
-  data_microsimulated = data.table::copy(menages_structural2),
+  data_microsimulated = menages_structural2,
   N_moments = 180,
   by = c("AGE", "tr_age_2015"),
   moment1 = "share",
@@ -114,6 +131,9 @@ output <- mindist::estimation_theta(
 )
 
 class(output) <- c("mindist", "list")
+
+saveRDS(output, "./output_r_heterogeneity.rds")
+
 
 tablelight::view_html(tablelight::light_table(output, type = "html",
                                               covariate.labels = c("$\\beta$",
