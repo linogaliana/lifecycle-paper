@@ -56,7 +56,6 @@ construct_EP <- function(path_data = "~"){
                                           EP_2018 = EP_2018)
   EP_lon[,'tr_age_2015' := floor(get("AGEPR_2015")/5)*5]
   
-  EP_lon[,'labor_income' := get("ZSALAIRES_I") + get("ZRETRAITES_I") + get("ZCHOMAGE_I")]
   EP_lon[,'top_10' := as.numeric(get('labor_income') > quantile(get('labor_income'), probs = 0.1, na.rm = TRUE))]
   
   data <- list(

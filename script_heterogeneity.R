@@ -29,13 +29,14 @@ path_data <- ".."
 
 
 data <- construct_EP(path_data)
-EP_2015 <- data[['EP_2015']]
-EP_2018 <- data[['EP_2018']]
-EP_lon <- data[['EP_lon']]
 
 
 saveRDS(data, "./data.rds")
 data <- readRDS("./data.rds")
+
+EP_2015 <- data[['EP_2015']]
+EP_2018 <- data[['EP_2018']]
+EP_lon <- data[['EP_lon']]
 
 
 data_prediction <- capitulation::prepare_data(

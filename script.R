@@ -66,7 +66,7 @@ parameters_estimation <- list("number_moments" = number_moments,
                               "method" = estimation_method)
 
 beta <- NULL
-r <- 0.03
+r <- 0.05
 gamma <- NULL
 
 # beta_0 <- runif(1, min = 0.5, max = 1.5)
@@ -104,7 +104,6 @@ output <- mindist::estimation_theta(
 )
 
 
-class(output) <- c("mindist", class(output))
 
 tablelight::view_html(tablelight::light_table(output, type = "html"))
 
@@ -117,7 +116,7 @@ moments <- wealthyR:::label_moments(
   by = c("AGE", NULL)
 )
 
-saveRDS(output, "./output_r02.rds")
+saveRDS(output, "./output_r05.rds")
 
 
 tablelight::view_html(tablelight::light_table(output, type = "html", covariate.labels = c("$\\beta$", "$\\gamma$"),
