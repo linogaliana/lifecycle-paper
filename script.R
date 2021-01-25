@@ -41,7 +41,8 @@ data <- readRDS("./data.rds")
 data_prediction <- capitulation::prepare_data(
   path_data = "..",
   inheritance_model = inheritance_model,
-  time_0 = "birth"
+  time_0 = "birth",
+  debt_wealthSurvey = "MTDETTES"
 )
 # aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
 #                   bucket = "groupe-788")
@@ -51,7 +52,7 @@ menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
 menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
 menages_structural2[, 'AGE' := get('age')]
-saveRDS(menages_structural2, file = "./tempfile.rds")  
+saveRDS(menages_structural2, file = "./tempfile_debt.rds")  
 
 menages_structural2 <- readRDS("./tempfile.rds")
 # ESTIMATION ---------------
