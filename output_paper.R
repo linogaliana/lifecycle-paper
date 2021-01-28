@@ -51,6 +51,7 @@ clean_data <- function(data, sex_var = "sexe",
                        diploma_var = "findet",
                        labor_income_var = "revenu",
                        total_income_var = "Y",
+                       statut_var = NULL,
                        year = 2015){
   
   
@@ -66,17 +67,21 @@ clean_data <- function(data, sex_var = "sexe",
   
   data[, c('decile_w') := cut(get(labor_income_var),
                               quantile(get(labor_income_var),
-                                       probs= 0:10/10),
+                                       probs= 0:10/10, na.rm = TRUE),
                               labels = 1:10, include.lowest = TRUE
   )]
   data[, c('decile_y') := cut(get(total_income_var),
                               quantile(get(total_income_var),
-                                       probs= 0:10/10),
+                                       probs= 0:10/10, na.rm = TRUE),
                               labels = 1:10, include.lowest = TRUE
   )]
   
-  return(data)
+  if (is.null(statut_var)) return(data)
   
+  data[,'retired' := data.table::fifelse(get(statut_var) == "5",
+                                         "retired","active")]
+  
+  return(data)  
 }
 
 simulations <- simulations[age > findet]
@@ -89,7 +94,8 @@ clean_data(EP_2015, sex_var = "SEXE", labor_income_var = "labor_income", diploma
            total_income_var = "y")
 
 EP_2018[, 'annee' := 2018]
-clean_data(EP_2018, sex_var = "SEXE", year = 2018, diploma_var = "AGFINETU")
+clean_data(EP_2018, sex_var = "SEXE", year = 2018, diploma_var = "AGFINETU",
+           statut_var = "SITUA")
 
 
 EP_lon[,'y' := get('labor_income') + r*get('PATFISOM_2015')]
@@ -358,16 +364,23 @@ cat(latex_table, sep = "\n",
 
 # REGRESSION TABLE ========================
 
-model <- readRDS("~/estimation/modele.rds")
+model <- readRDS("./modele.rds")
 cat(
   tablelight::light_table(
     model, type = "latex", title = "Heritage: estimating equation",
     label = "tab:heritage",
     dep.var.labels = "Amount inherited",
     column.labels = "\\textit{Model in log}",
-    covariate.labels = c("Log income","Age",
-                         "Age (squared, divided by 100)", "Graduation age",
-                         "Graduation age (squared, divided by 100)"),
+    covariate.labels = c("Log income",
+                         c(sprintf("Age between %s and %s",
+                                   seq(20, 90, by = 5),
+                                   seq(25, 95, by = 5)
+                         ),
+                         "Older than 95"
+                         ),
+                         "Sexe",
+                         paste0("Graduation age: ", c("14 or lower", 15: 28, "30 or higher"))
+    ),
     add.lines = "Model estimated by interval regression (ordered probit regression with known thresholds) using declared received bequests in \\textit{Enquête Patrimoine 2009}"
   ),
   sep = "\n",
@@ -388,6 +401,112 @@ print(xtable::xtable(tablelight:::summary_(
   include.rownames=FALSE,
   caption.placement = "top",
   file = "./tables/simulated_heritage.tex")
+
+
+# Figure des histogrammes: inheritance predicted vs observed
+# cf. script exploreep/inheritance.R
+
+
+EP_data <- wealthyR:::prepare_inheritance_sample(
+  path_survey =   "../Enquete Patrimoine"
+)
+
+
+inheritance_data <- REtage::prepare_estimation(EP_data,
+                                               taille_tr_agfinetu = 1)
+
+
+bounds <- c(3,8,15,30,60,100,150,200,250)*1000
+lbounds <- log(bounds)
+
+estim_data <- inheritance_data[get('income')>0]
+
+estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
+estim_data <- estim_data[order(MTHER)]
+estim_data[,'age' := get('AGE')]
+
+estim_model <- function(form = "MTHER ~ lw + age + I((age^2)/100) + AGFINETU + I((AGFINETU^2)/100)",
+                        formulaSD = NULL,
+                        optmeth = "NR",
+                        thresholds = lbounds,
+                        search_iter = 10){
+  
+  estim_data <- estim_data[order(MTHER)] 
+  
+  # inheritance_model <- REtage::ordered_model_threshold(
+  #   data = data.frame(estim_data),
+  #   formula = form,
+  #   formulaSD = formulaSD,
+  #   link = "probit",
+  #   constantSD = TRUE,
+  #   thresholds = lbounds,
+  #   optmeth = optmeth
+  # )
+  
+  inheritance_model <- oglm::oglmx(
+    formulaMEAN = form,
+    formulaSD = formulaSD,
+    data = estim_data,
+    threshparam = thresholds,
+    start_method = "search",
+    search_iter = search_iter
+  )
+  
+  
+  estim_data[, pred := predict(inheritance_model, estim_data,
+                               type ="latent")$y_latent_pred]
+  estim_data[, pred_cut := cut(pred, c(-Inf, lbounds, Inf),
+                               labels = order(unique(MTHER)))]
+  
+  library(ggplot2)
+  
+  confusion_matrix <- as.data.frame(table(estim_data$pred_cut, estim_data$MTHER))
+  
+  p1 <- ggplot(data = confusion_matrix,
+               mapping = aes(x = Var1,
+                             y = Var2)) +
+    geom_tile(aes(fill = Freq)) +
+    geom_text(aes(label = sprintf("%1.0f", Freq)), vjust = 1) +
+    scale_fill_viridis_c(trans = "log", labels = scales::number_format(accuracy = 1),
+                         option = "plasma") +
+    scale_y_discrete(limits = rev(levels(confusion_matrix$Var2))) +
+    labs(x = "Predicted", y = "Actual")
+  
+  
+  confusion_matrix2 <- as.data.frame(table(estim_data$pred_cut, estim_data$MTHER))
+  data.table::setDT(confusion_matrix2)
+  confusion_matrix2[,'Freq2' := as.numeric(Freq)/sum(as.numeric(Freq)), by = Var2]
+  
+  p2 <- ggplot(data = confusion_matrix2,
+               mapping = aes(x = Var1,
+                             y = Var2)) +
+    geom_tile(aes(fill = Freq2)) +
+    geom_text(aes(label = sprintf("%1.0f", Freq)), vjust = 1) +
+    scale_fill_viridis_c(trans = "log", labels = scales::percent_format(accuracy = 1),
+                         option = "plasma") +
+    scale_y_discrete(limits = rev(levels(confusion_matrix$Var2))) +
+    labs(x = "Predicted", y = "Actual")
+  
+  
+  tempdata <- estim_data[,lapply(.SD, function(x) as.numeric(as.character(x))),.SDcols = c("MTHER", "pred_cut")]
+  tempdata <- data.table::melt(tempdata)
+  p3 <- ggplot(tempdata) +
+    geom_histogram(aes(x = value, fill = variable),
+                   position = position_dodge(preserve = "single")) +
+    scale_fill_viridis_d()
+  
+  accur <- sum(confusion_matrix2[Var1 == Var2]$Freq)/sum(confusion_matrix2$Freq)
+  # print(sprintf("Accuracy: %1.2f%%", 100*accur))
+  
+  return(list(p1,p2,p3,'model' = inheritance_model, "accuracy" = accur))
+}
+
+mod5 = estim_model("MTHER ~ lw + tr_age + SEXE + tr_agfinetu",
+                   formulaSD = NULL)
+
+ggplot2::ggsave(plot = mod5[[3]], filename = "./pics/inheritance_predicted.pdf",
+                width = 13, height = 9)
+
 
 
 
@@ -453,13 +572,13 @@ ggplot2::ggsave(plot = p, filename = "./pics/02_calibration_rK.pdf",
 moment1 <- gridExtra::grid.arrange(
   wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = simulations,
                             scale_moment = "share",
-                            by_survey = "AGE", by_simulation = 'age', scale = "log")$fit[[1]] +
+                            by_survey = "AGE", by_simulation = 'age', scale_variable  = "log")$fit[[1]] +
     ggplot2::scale_fill_manual(values = c('microsimulation' = 'black',
                                           'survey' = 'royalblue')) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "top"),
   wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = simulations,
-                            by_survey = "AGEPR", by_simulation = 'age', scale = "log")$fit[[2]]
+                            by_survey = "AGEPR", by_simulation = 'age', scale_variable = "log")$fit[[2]]
 )
 
 ggplot2::ggsave(plot = moment1, "./pics/moment1.pdf", width = 18, height = 20)
@@ -489,3 +608,8 @@ p <- ggplot2::ggplot(p$data[variable != "total"]) + ggplot2::geom_line(ggplot2::
                                                              axis.title = ggplot2::element_text(size = 20, face = "bold"))
 
 ggplot2::ggsave(plot = p, "./pics/lorenz.pdf", width = 12, height = 12)
+
+
+# FIT QUALITY ----------
+
+
