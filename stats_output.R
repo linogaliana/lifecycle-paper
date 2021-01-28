@@ -1,15 +1,30 @@
 
 # PARAMETERS GLOBAUX -------------------------
 
+setwd("../estimation")
+
+
+inheritance_model <- readRDS("./modele.rds")
+
+
 population <- readRDS(file = "tempfile.rds")
-data <- readRDS("data.rds")
+
+
+path_data <- ".."
+source("functions.R")
+
+data <- construct_EP(path_data)
+
+
 EP_2015 <- data[['EP_2015']]
 EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
 
 
-beta  <- 0.975
-gamma <- 0.8428378
+output <- readRDS("output.rds")
+
+beta  <- output$estimates$theta_hat['beta']
+gamma <- output$estimates$theta_hat['gamma']
 r <- 0.03
 
 
@@ -165,7 +180,7 @@ cat(
                              caption = "Summary statistics on wealth survey (\\textit{Enquête Patrimoine})",
                              label = "tab: summary stat EP 2015",
                              add_rules = TRUE,
-                             stats = c("mean","1Q",'median','3Q')
+                             stats = c("1Q","mean",'median','3Q','P90','N')
   ),
   sep = "\n"
 )
@@ -179,7 +194,7 @@ cat(
                              caption = "Summary statistics predicted by our model (year : 2015)",
                              label = "tab: summary stat microsimulated wealth",
                              add_rules = TRUE,
-                             stats = c("mean","1Q",'median','3Q')
+                             stats = c("1Q","mean",'median','3Q','P90','N')
   ),
   sep = "\n"
 )
@@ -194,19 +209,28 @@ cat(
 model <- readRDS("modele.rds")
 cat(
   tablelight::light_table(
-    model, type = "latex", title = "Heritage: estimating equation",
+    model,
+    title = "Heritage: estimating equation",
     label = "tab:heritage",
+    type = "latex",
     dep.var.labels = "Amount inherited",
     column.labels = "\\textit{Model in log}",
-    covariate.labels = c("Log income","Age",
-                         "Age (squared, divided by 100)", "Graduation age",
-                         "Graduation age (squared, divided by 100)")
+    covariate.labels = c("Log income",
+                         c(sprintf("Age between %s and %s",
+                                   seq(20, 90, by = 5),
+                                   seq(25, 95, by = 5)
+                         ),
+                         "Older than 95"
+                         ),
+                         "Female (reference: male)",
+                         paste0("Graduation age: ", c(14: 29, "30 or higher"))
+    )
   ), sep = "\n"
 )
 
 
 
-## Faire un truc propre pour update papier
+
 
 
 # GRAPHIQUES PAR ANNEE --------------------------------
