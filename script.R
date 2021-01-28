@@ -12,7 +12,9 @@ unzip("../Enquete Patrimoine.zip", exdir="..")
 
 
 inheritance_model <- create_inheritance_model(
-  path_survey =  "../Enquete Patrimoine"
+  path_survey =  "../Enquete Patrimoine",
+  taille_tr_age = 5,
+  taille_tr_agfinetu = 1
 )
 
 
@@ -29,10 +31,16 @@ path_data <- ".."
 
 
 data <- construct_EP(path_data)
+
+
 EP_2015 <- data[['EP_2015']]
 EP_2018 <- data[['EP_2018']]
 EP_lon <- data[['EP_lon']]
 
+# EP_2015[,'PATFISOM' := get('PATFISOM') - get("MTDETTES")]
+# EP_2018[,'PATFISOM' := get('PATFISOM') - get("MTDETTES")]
+# EP_lon[,'PATFISOM_2015' := get('PATFISOM_2015') - get("MTDETTES_2015")]
+# EP_lon[,'PATFISOM_2018' := get('PATFISOM_2018') - get("MTDETTES_2018")]
 
 saveRDS(data, "./data.rds")
 data <- readRDS("./data.rds")
@@ -42,8 +50,11 @@ data_prediction <- capitulation::prepare_data(
   path_data = "..",
   inheritance_model = inheritance_model,
   time_0 = "birth",
-  debt_wealthSurvey = "MTDETTES"
+  # debt_wealthSurvey = "MTDETTES",
+  taille_tr_age = 5,
+  taille_tr_agfinetu = 1
 )
+
 # aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
 #                   bucket = "groupe-788")
 
@@ -52,7 +63,9 @@ menages_structural2[,'hg' := get('H_given')]
 menages_structural2[,'hr' := get('H_received')]
 menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
 menages_structural2[, 'AGE' := get('age')]
-saveRDS(menages_structural2, file = "./tempfile_debt.rds")  
+
+
+saveRDS(menages_structural2, file = "./tempfile.rds")  
 
 menages_structural2 <- readRDS("./tempfile.rds")
 # ESTIMATION ---------------
@@ -67,7 +80,7 @@ parameters_estimation <- list("number_moments" = number_moments,
                               "method" = estimation_method)
 
 beta <- NULL
-r <- 0.05
+r <- 0.03
 gamma <- NULL
 
 # beta_0 <- runif(1, min = 0.5, max = 1.5)
@@ -76,6 +89,7 @@ beta_0 <- 0.9
 gamma_0 <- 0.6
 
 menages_structural2[,'AGE' := age]
+
 
 output <- mindist::estimation_theta(
   theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
@@ -95,8 +109,10 @@ output <- mindist::estimation_theta(
   data_microsimulated = menages_structural2,
   N_moments = 180,
   by = c("AGE", "tr_age_2015"),
+  scale_variable = "log",
+  scale_moment1 = "level",                               
+  stat_moment2 = 'difference',
   moment1 = "share",
-  scale = scale_wealth,
   moments_weights = "weight",
   verbose = TRUE,
   Hgiven_var = "hg",
@@ -117,10 +133,10 @@ moments <- wealthyR:::label_moments(
   by = c("AGE", NULL)
 )
 
-saveRDS(output, "./output_r05.rds")
+saveRDS(output, "./output.rds")
 
 
-tablelight::view_html(tablelight::light_table(output, type = "html", covariate.labels = c("$\\beta$", "$\\gamma$"),
+ tablelight::view_html(tablelight::light_table(output, type = "html", covariate.labels = c("$\\beta$", "$\\gamma$"),
                                               dep.var.labels = "\\textsc{Estimates}", column.labels = NULL))
 
 
