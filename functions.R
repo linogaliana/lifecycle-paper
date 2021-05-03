@@ -1,5 +1,6 @@
 create_inheritance_model <- function(path_survey =  "~/Enquete Patrimoine",
                                      formula = "MTHER ~ lw + tr_age + SEXE + tr_agfinetu",
+                                     selection = NULL,
                                      search_iter = 10,
                                      taille_tr_age = 5,
                                      taille_tr_agfinetu = 2){
@@ -22,18 +23,52 @@ create_inheritance_model <- function(path_survey =  "~/Enquete Patrimoine",
   estim_data <- inheritance_data[get('income')>0]
   
   estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
+  estim_data[is.na(get("MTHER")), c("MTHER") := min(get("MTHER"))]
   estim_data <- estim_data[order(MTHER)]
   estim_data[,'age' := get('AGE')]
   # estim_data[,'findet' := get('AGFINETU')]
   
-  inheritance_model <- oglm::oglmx(
-    formulaMEAN = formula,
-    formulaSD = NULL,
-    data = estim_data,
-    threshparam = lbounds,
-    start_method = "search",
-    search_iter = search_iter
-  )
+  estim_data <- estim_data[get('age') < 80]
+  
+  if (is.null(selection)){
+    estim_data <- estim_data[get('inherited')]
+  } else{
+    estim_data$inherited <- factor(as.numeric(estim_data$inherited))
+    # estim_data <- na.omit(estim_data, cols = c("MTHER", "lw", "tr_age", "SEXE", "tr_agfinetu",
+    #                              "inherited"))
+  }
+  
+  
+  if (is.null(selection)){  
+    inheritance_model <- oglm::oglmx(
+      formulaMEAN = as.formula("MTHER ~ lw + tr_agfinetu"),
+      formulaSD = NULL,
+      selection = NULL,
+      data = estim_data,
+      threshparam = lbounds,
+      # start = inheritance_model$start,
+      # gradient = "numerical"
+      start_method = "search",
+      search_iter = search_iter
+    )
+    return(inheritance_model)
+  } else{
+    inheritance_model <- sampleSelection::selection(
+      selection = as.formula('inherited ~ income_group'),
+      outcome = as.formula("MTHER ~ lw  + tr_agfinetu"),
+      boundaries = c(-Inf, lbounds, Inf),
+      data = estim_data
+    )
+    
+  }
+  
+  # library(sampleSelection)
+  # probs0 <- data.frame(
+  #   p0 = as.numeric(predict(inheritance_model, type = "response", part = "selection")),
+  #   predict_outcome = as.numeric(predict(inheritance_model, type = "conditional", part = 'outcome'))
+  # )
+  # equivalent to : as.numeric(predict(oglm_model, type = "P[y == 0|Z]", newdata = dat))
+  # equivalent to : predict(oglm_model, type = "E[y|X,y>0]", newdata = dat)
   
   return(inheritance_model)
 }

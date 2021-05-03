@@ -14,7 +14,8 @@ unzip("../Enquete Patrimoine.zip", exdir="..")
 inheritance_model <- create_inheritance_model(
   path_survey =  "../Enquete Patrimoine",
   taille_tr_age = 5,
-  taille_tr_agfinetu = 1
+  taille_tr_agfinetu = 1,
+  selection = NULL
 )
 
 
@@ -52,7 +53,9 @@ data_prediction <- capitulation::prepare_data(
   time_0 = "birth",
   # debt_wealthSurvey = "MTDETTES",
   taille_tr_age = 5,
-  taille_tr_agfinetu = 1
+  taille_tr_agfinetu = 1,
+  path_data_suffix = "/Destinie2120", 
+  extension = ".rda"
 )
 
 # aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",

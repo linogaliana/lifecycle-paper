@@ -1,0 +1,89 @@
+---
+title: "Figures Retraites et Société"
+author: "LG"
+date: "28/01/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+## Figure 1
+
+```{r, fig.cap="Figure 1: Comparaison des patrimoines observés à partir de l'Enquête Patrimoine 2014-2015 et simulés par le modèle économétrique (probit ordonné à seuils connus)"}
+knitr::include_graphics("./output_ret_soc/fig01_inheritance_predicted.pdf")
+```
+
+
+*Source:* Enquête Patrimoine 2014-2015 
+
+*Note:* Le montant d'héritage est estimé par probit ordonné avec seuils connus. 
+Après application des seuils d'héritage définis dans l'enquête Patrimoine
+2014-2015, la prédiction peut ainsi être comparée à la distribution
+observée par tranches.
+
+
+## Figure 2
+
+```{r, fig.cap="Figure 2: Patrimoine simulé au cours du cycle de vie (simulations de 2009 à 2040)"}
+knitr::include_graphics("./output_ret_soc/fig02_calibration.pdf")
+```
+
+*Source:* Modèle Destinie 2, enrichi d'une dimension patrimoniale
+
+*Lecture:* Cette figure représente une relation estimée entre
+l'âge et le patrimoine simulé à partir de coupes annuelles du modèle de 
+microsimulation Destinie, représentatant un échantillon représentatif à 0.1%
+de la population française. Chaque courbe représente une année, entre 2009 et
+2040. Par construction, l'année 2009 correspond à la distribution observée
+dans l'Enquête Patrimoine 2009. La courbe la représentant est plus large que
+les autres. A partir de 2009, la richesse est simulée en fonction du modèle
+structurel.
+
+
+## Figure 3
+
+```{r, fig.cap="Figure 3: Part de chaque classe d'âge dans le patrimoine total: comparaison entre données observées et simulées"}
+knitr::include_graphics("./output_ret_soc/fig03_moment1.pdf")
+```
+
+*Sources: * Enquête Patrimoine 2014-2015 et modèle Destinie 2, enrichi
+d'une dimension patrimoniale
+
+*Lecture:* Cette figure compare des statistiques agrégées à partir des données
+simulées et observées pour l'année 2015. En haut, est représentée la part
+du patrimoine total qui est détenue par chaque cohorte. En bas, est représentée
+la part de la population que chaque cohorte représente. 
+
+
+## Figure 4
+
+```{r, fig.cap="Figure 4: Evolution du patrimoine individuel entre 2015 et 2018 dans les données observées et simulées"}
+knitr::include_graphics("./output_ret_soc/fig04_moment2.pdf")
+```
+
+*Sources: * Enquêtes Histoire de Vie et Patrimoine 2014-2015 et 2017-2018 pour
+les individus panélisés ; 
+modèle Destinie 2, enrichi d'une dimension patrimoniale
+
+*Lecture:* Cette figure représente l'évolution (en % par rapport au patrimoine
+de 2015) du patrimoine individuel entre les années 2015 et 2018 dans les données
+observées (deux vagues de l'enquête Histoire de Vie et Patrimoine) et
+les données simulées à partir de Destinie 2
+
+
+## Figure 5
+
+```{r, fig.cap="Figure 5: Comparaison en 2018 de la distribution observée et simulée du patrimoine"}
+knitr::include_graphics("./output_ret_soc/fig05_fit.pdf")
+```
+
+*Sources: * Enquête Histoire de Vie et Patrimoine 2017-2018  ; 
+modèle Destinie 2, enrichi d'une dimension patrimoniale
+
+*Lecture:* Cette figure compare la distribution simulée du patrimoine financier
+dans Destinie avec la distribution observée du patrimoine financier et
+du patrimoine financier net des emprunts dans l'enquête Patrimoine. 
+Les données sont en échelle logarithmique, tenant compte du signe. 
+

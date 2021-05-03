@@ -63,7 +63,7 @@ simulations2 <- capitulation::life_cycle_model(
   additional_vars = c("tr_age_2015","sexe","findet"))
 
 
-capitulation::plot_K_age(simulations)
+capitulation::plot_K_age(simulations, xlims = c(30,75))
 
 # UN PEU DE DATA CLEANING --------------------
 
