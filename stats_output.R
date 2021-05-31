@@ -46,10 +46,12 @@ simulations <- capitulation::life_cycle_model(
   Hreceived_var = "hr",
   return_last = FALSE,
   get_capital_income = TRUE,
+  scale_model = "log",
+  # scale_model = "log",
   additional_vars = c("tr_age_2015","sexe","findet"))
 
 simulations2 <- capitulation::life_cycle_model(
-  population2,
+  population,
   wealthvar_survey = "K_observed",
   r = r,
   beta = beta,
@@ -58,12 +60,29 @@ simulations2 <- capitulation::life_cycle_model(
   income_var = "revenu",
   Hgiven_var = "hg",
   Hreceived_var = "hr",
-  return_last = FALSE,
+  # return_last = TRUE,
   get_capital_income = TRUE,
+  scale_model = "log",
   additional_vars = c("tr_age_2015","sexe","findet"))
 
+simulations[,'wealth' := exp(wealth)]
+simulations2[,'wealth' := exp(wealth)]
 
-capitulation::plot_K_age(simulations, xlims = c(30,75))
+p1 <- capitulation::plot_K_age(simulations[age>findet], xlims = c(30,75), method = "median")
+ggplot2::ggsave(plot = p1, "./test_2021_04_21/log_wealth/k_age.pdf", width = 12, height = 8)
+
+p2 <- capitulation::plot_rK_age(simulations[age>findet], xlims = c(30,75))
+ggplot2::ggsave(plot = p2, "./test_2021_04_21/log_wealth/rk_age.pdf", width = 12, height = 8)
+
+# essai = simulations2[, .SD[.N], by="Id"]
+# essai[,diff := abs(hg - wealth)]
+# 
+# summary(essai[hg>0]$diff)
+# round(quantile(essai[hg>0]$diff, probs = c(0:10)/10))
+# 
+# ggplot2::ggplot(essai, ggplot2::aes(x = log(diff + 1), y = ..density..)) +
+#   ggplot2::geom_histogram()
+  
 
 # UN PEU DE DATA CLEANING --------------------
 
@@ -110,7 +129,7 @@ EP_2018[, 'annee' := 2018]
 clean_data(EP_2018, sex_var = "SEXE", year = 2018, diploma_var = "AGFINETU")
 
 
-EP_lon[,'y' := get('labor_income') + r*get('PATFISOM_2015')]
+EP_lon[,'y' := get('w_2015') + r*get('PATFISOM_2015')]
 EP_lon <- merge(EP_lon, EP_2015[,.SD,.SDcols = c("IDENTIND14","tr_diplome", "decile_w", "decile_y")],
                 by = c("IDENTIND14"))
 EP_lon[, c('SEXE') := data.table::fifelse(get('SEXE')==1,
@@ -356,15 +375,17 @@ ggplot2::ggplot(
 
 moment1 <- gridExtra::grid.arrange(
   wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = simulations,
-                            by_survey = "AGE", by_simulation = 'age', scale = "log")$fit[[1]] +
+                            by_survey = "AGE", by_simulation = 'age', 
+                            scale_moment_share = "level",
+                            scale_variable = "asinh")$fit[[1]] +
     scale_fill_manual(values = c('microsimulation' = 'black', 
                                  'survey' = 'royalblue')) + theme_bw() +
     theme(legend.position = "top"),
   wealthyR::plot_moment_age(EP_2015, EP_2018, simulations = simulations,
-                            by_survey = "AGEPR", by_simulation = 'age', scale = "log")$fit[[2]]
+                            by_survey = "AGEPR", by_simulation = 'age', scale_variable = "log")$fit[[2]]
 )
 
-ggsave(plot = moment1, "./stats/moment1.pdf", width = 18, height = 10)
+ggsave(plot = moment1, "./tests_2021_04_21/log_wealth/moment1.pdf", width = 18, height = 10)
 
 
 ## MOMENT 1 (BY=.) =================
@@ -391,12 +412,12 @@ ggsave(plot = moment1, "./stats/moment1.pdf", width = 18, height = 10)
 moment2 <- wealthyR::plot_moment_dK(
   EP_lon = EP_lon, simulations = simulations,
   scale = "log", by = "tr_age_2015"
-) + scale_color_manual(values = c('simulation' = 'black', 
+) + scale_color_manual(values = c('microsimulation' = 'black', 
                                   'survey' = 'royalblue')) + theme_bw() +
   theme(legend.position = "bottom")
 
 
-ggsave(plot = moment2, "./stats/moment2.pdf", width = 12, height = 8)
+ggsave(plot = moment2, "./tests_2021_04_21/log_wealth/moment2.pdf", width = 12, height = 8)
 
 
 ## MOMENT 2 BY=. ================

@@ -211,41 +211,30 @@ clean_data <- function(data, sex_var = "sexe",
                        diploma_var = "findet",
                        labor_income_var = "revenu",
                        total_income_var = "Y",
-                       statut_var = NULL,
                        year = 2015){
   
   
   data[, c('SEXE') := data.table::fifelse(get(sex_var)==1,
                                           'Male',
                                           'Female')]
-  data[, c('tr_diplome') := cut(get(diploma_var),
-                                breaks = c(0, 16,18,21,25,
-                                           max(get(diploma_var), na.rm = TRUE)),
-                                include.lowest = TRUE)]
+  data[, c('tr_diplome') := cut(get(diploma_var), breaks = c(min(get(diploma_var)), 16,18,21,25, max(get(diploma_var))), include.lowest = TRUE)]
   
-  
-  data[, c(labor_income_var) := get(labor_income_var) + exp(rnorm(nrow(data)))]
-  data[, c(total_income_var) := get(total_income_var) + exp(rnorm(nrow(data)))]
+  if (year != 2015) return(data)  
   
   data[, c('decile_w') := cut(get(labor_income_var),
                               quantile(get(labor_income_var),
-                                       probs= 0:10/10, na.rm = TRUE),
+                                       probs= 0:10/10) + seq_along(0:10)*.Machine$double.eps,
                               labels = 1:10, include.lowest = TRUE
   )]
   data[, c('decile_y') := cut(get(total_income_var),
                               quantile(get(total_income_var),
-                                       probs= 0:10/10, na.rm = TRUE),
+                                       probs= 0:10/10)  + seq_along(0:10)*.Machine$double.eps,
                               labels = 1:10, include.lowest = TRUE
   )]
   
-  if (is.null(statut_var)) return(data)
+  return(data)
   
-  data[,'retired' := data.table::fifelse(get(statut_var) == "5",
-                                         "retired","active")]
-  
-  return(data)  
 }
-
 
 
 

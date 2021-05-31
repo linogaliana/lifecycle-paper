@@ -7,8 +7,8 @@ library(tablelight)
 
 
 
-unzip("../Destinie.zip", exdir="..")
-unzip("../Enquete Patrimoine.zip", exdir="..")
+#unzip("../Destinie.zip", exdir="..")
+#unzip("../Enquete Patrimoine.zip", exdir="..")
 
 
 inheritance_model <- create_inheritance_model(
@@ -55,7 +55,8 @@ data_prediction <- capitulation::prepare_data(
   taille_tr_age = 5,
   taille_tr_agfinetu = 1,
   path_data_suffix = "/Destinie2120", 
-  extension = ".rda"
+  extension = ".rda",
+  wealthvar_survey = "PATRI_NET"
 )
 
 # aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
@@ -102,20 +103,22 @@ output <- mindist::estimation_theta(
   beta = beta,
   r = r,
   gamma = gamma,
-  # model_function = mindist:::loss_function,
+  approach = "two_step",
   prediction_function = wealthyR:::model_capitulation,
-  approach = estimation_method,
+  # approach = estimation_method,
   select_moments = select_moments,
   EP_2015 = EP_2015,
   EP_lon = EP_lon,
   EP_2018 = EP_2018,
   data_microsimulated = menages_structural2,
   N_moments = 180,
+  wealth_var = "PATRI_NET",
   by = c("AGE", "tr_age_2015"),
-  scale_variable = "log",
-  scale_moment1 = "level",                               
+  scale_model = "log",
+  scale_variable_moment1 = "log",
+  scale_variable_moment2 = "log",
   stat_moment2 = 'difference',
-  moment1 = "share",
+  moment1 = "level",
   moments_weights = "weight",
   verbose = TRUE,
   Hgiven_var = "hg",
@@ -136,10 +139,10 @@ moments <- wealthyR:::label_moments(
   by = c("AGE", NULL)
 )
 
-saveRDS(output, "./output.rds")
+saveRDS(output, "./output_piste1.rds")
 
 
- tablelight::view_html(tablelight::light_table(output, type = "html", covariate.labels = c("$\\beta$", "$\\gamma$"),
+tablelight::view_html(tablelight::light_table(output, type = "html", covariate.labels = c("$\\beta$", "$\\gamma$"),
                                               dep.var.labels = "\\textsc{Estimates}", column.labels = NULL))
 
 
