@@ -72,6 +72,8 @@ menages_structural2[, 'AGE' := get('age')]
 saveRDS(menages_structural2, file = "./tempfile.rds")  
 
 menages_structural2 <- readRDS("./tempfile.rds")
+
+
 # ESTIMATION ---------------
 
 number_moments <- 2L
@@ -125,6 +127,7 @@ output <- mindist::estimation_theta(
   Hreceived_var = "hr",
   method = "Nelder-Mead"
 )
+
 
 
 

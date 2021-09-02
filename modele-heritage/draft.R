@@ -1,11 +1,10 @@
 library(tablelight)
 
-unzip("~/Destinie.zip", exdir="~")
-unzip("~/Enquete Patrimoine.zip", exdir="~")
+source("functions.R")
 
 
 EP_data <- wealthyR:::prepare_inheritance_sample(
-  path_survey =  "~/Enquete Patrimoine"
+  path_survey =  "../Enquete Patrimoine"
 )
 
 
@@ -18,9 +17,39 @@ lbounds <- log(bounds)
 
 estim_data <- inheritance_data[get('revenu')>0]
 
-estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
-estim_data <- estim_data[order(MTHER)]
 
+
+estim_data <-data.table::copy(inheritance_data)#[get('income')>0]
+
+estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
+estim_data[is.na(get("MTHER")), c("MTHER") := min(get("MTHER"))]
+estim_data <- estim_data[order(MTHER)]
+estim_data[,'age' := get('AGE')]
+# estim_data[,'findet' := get('AGFINETU')]
+
+estim_data <- estim_data[get('age') < 80]
+
+estim_data$inherited <- factor(as.numeric(estim_data$inherited))
+
+estim_data[, c('N_heritiers') := .N, by = c("annee","IDENT","IDENTTRANS")]
+
+data.table::fwrite(estim_data, "./modele-heritage/estimsample.csv")
+
+
+# MODEL WITH SELECTION ------------
+
+inheritance_model <- sampleSelection::selection(
+  selection = as.formula('inherited ~ income_group'),
+  outcome = as.formula("MTHER ~ lw  + tr_agfinetu"),
+  boundaries = c(-Inf, lbounds, Inf),
+  data = estim_data
+)
+
+
+
+# MODEL WITHTOUT SELECTION --------
+
+estim_data <- estim_data[get('income')>0]
 
 inheritance_model_1 <- REtage::ordered_model_threshold(
   data = data.frame(estim_data[order(MTHER)]),
@@ -29,6 +58,16 @@ inheritance_model_1 <- REtage::ordered_model_threshold(
   constantSD = TRUE,
   thresholds = lbounds
 )
+
+
+inheritance_model_1_div <- REtage::ordered_model_threshold(
+  data = data.frame(estim_data[order(MTHER)]),
+  formula = "MTHER ~ lw + N_heritiers",
+  link = "logit",
+  constantSD = TRUE,
+  thresholds = lbounds
+)
+
 
 inheritance_model_1b <- REtage::ordered_model_threshold(
   data = data.frame(estim_data[order(MTHER)]),
