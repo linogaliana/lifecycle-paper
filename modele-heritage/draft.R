@@ -39,10 +39,17 @@ data.table::fwrite(estim_data, "./modele-heritage/estimsample.csv")
 # MODEL WITH SELECTION ------------
 
 inheritance_model <- sampleSelection::selection(
-  selection = as.formula('inherited ~ income_group'),
-  outcome = as.formula("MTHER ~ lw  + tr_agfinetu"),
+  selection = as.formula('inherited ~ factor(tr_age) + factor(tr_agfinetu)'),
+  outcome = as.formula("MTHER ~ as.factor(SEXE) + lw"),
   boundaries = c(-Inf, lbounds, Inf),
   data = estim_data
+)
+
+inheritance_model <- oglm::oglmx(
+  formulaMEAN = as.formula("MTHER ~ as.factor(SEXE) + lw"),
+  selection = as.formula('inherited ~ factor(tr_age) + factor(tr_agfinetu)'),
+  threshparam  = c(-Inf, lbounds, Inf),
+  data = estim_data[1:1000]
 )
 
 
@@ -50,7 +57,7 @@ inheritance_model <- sampleSelection::selection(
 # MODEL WITHTOUT SELECTION --------
 
 estim_data <- estim_data[get('income')>0]
-
+estim_data <- estim_data[!is.na(MTHER )]
 inheritance_model_1 <- REtage::ordered_model_threshold(
   data = data.frame(estim_data[order(MTHER)]),
   formula = "MTHER ~ lw",
