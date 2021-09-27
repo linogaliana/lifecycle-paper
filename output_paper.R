@@ -36,6 +36,7 @@ simulations <- capitulation::life_cycle_model(
   r = r,
   beta = beta,
   gamma = gamma,
+  non_ricardian = TRUE,
   observation_year = 2009,
   income_var = "revenu",
   Hgiven_var = "hg",

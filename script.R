@@ -17,7 +17,7 @@ inheritance_model <- create_inheritance_model(
   taille_tr_agfinetu = 1,
   selection = NULL
 )
-
+class(inheritance_model) <- c("oglm",'oglmx')
 
 summary(inheritance_model)
 
@@ -50,17 +50,17 @@ data <- readRDS("./data.rds")
 data_prediction <- capitulation::prepare_data(
   path_data = "..",
   inheritance_model = inheritance_model,
+  selection_model = probit,
   time_0 = "birth",
   # debt_wealthSurvey = "MTDETTES",
   taille_tr_age = 5,
-  taille_tr_agfinetu = 1,
+  taille_tr_agfinetu = 2,
   path_data_suffix = "/Destinie2120", 
   extension = ".rda",
   wealthvar_survey = "PATRI_NET"
 )
 
-# aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
-#                   bucket = "groupe-788")
+
 
 menages_structural2 <- data.table::copy(data_prediction)
 menages_structural2[,'hg' := get('H_given')]
@@ -87,12 +87,12 @@ parameters_estimation <- list("number_moments" = number_moments,
 
 beta <- NULL
 r <- 0.03
-gamma <- NULL
+gamma <- 2
 
 # beta_0 <- runif(1, min = 0.5, max = 1.5)
 beta_0 <- 0.9
 # gamma_0 <- runif(1, min = 0.2, max = 5)
-gamma_0 <- 0.6
+gamma_0 <- 1.5
 
 menages_structural2[,'AGE' := age]
 

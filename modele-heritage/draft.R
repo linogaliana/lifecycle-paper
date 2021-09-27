@@ -6,7 +6,7 @@ source("functions.R")
 EP_data <- wealthyR:::prepare_inheritance_sample(
   path_survey =  "../Enquete Patrimoine"
 )
-
+EP_data <- EP_data[(MER1E == 3 & PER1E==3) | (!is.na(MTHER))]
 
 
 inheritance_data <- REtage::prepare_estimation(EP_data)
@@ -15,57 +15,116 @@ inheritance_data <- REtage::prepare_estimation(EP_data)
 bounds <- c(3,8,15,30,60,100,150,200,250)*1000
 lbounds <- log(bounds)
 
-estim_data <- inheritance_data[get('revenu')>0]
 
 
 
 estim_data <-data.table::copy(inheritance_data)#[get('income')>0]
 
 estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
-estim_data[is.na(get("MTHER")), c("MTHER") := min(get("MTHER"))]
-estim_data <- estim_data[order(MTHER)]
 estim_data[,'age' := get('AGE')]
-# estim_data[,'findet' := get('AGFINETU')]
+
 
 estim_data <- estim_data[get('age') < 80]
+estim_data <- estim_data[get('income')>0]
 
-estim_data$inherited <- factor(as.numeric(estim_data$inherited))
 
 estim_data[, c('N_heritiers') := .N, by = c("annee","IDENT","IDENTTRANS")]
 
+
 data.table::fwrite(estim_data, "./modele-heritage/estimsample.csv")
+
+estim_data[is.na(get("MTHER")), c("MTHER") := 0]
+estim_data[, inherited := (MTHER != 0) ]
+estim_data$inherited <- factor(as.numeric(estim_data$inherited))
+estim_data <- estim_data[order(MTHER)]
+
+estim_data <- na.omit(estim_data, cols = c("inherited","tr_age","tr_agfinetu","SEXE", "lw", "MTHER"))
+
+
+  
+# SELECTION MODEL -----------------
+
+
+probit <- glm(inherited ~ factor(tr_age) + factor(tr_agfinetu),
+                family = binomial(link = "probit"), 
+                data = estim_data)
+summary(probit)
+
+pred_selection <- predict(probit, type = "link")
+pred_selection <- pred_selection + rnorm(length(pred_selection), sd = sd(probit$residuals))
+pred_selection <- as.numeric(pred_selection > 0)
+
+
+confusion_first_step <- data.frame(
+  prediction = pred_selection,
+  observation = as.numeric(estim_data$inherited)
+)
+table(confusion_first_step)
+
+
+# MODEL WITHOUT SELECTION --------
+
+
+inheritance_model <-  oglm::oglmx(
+  data = data.frame(estim_data[MTHER>0]),
+  link = "probit",
+  formulaMEAN = "MTHER ~ factor(SEXE) + lw",
+  constantSD = TRUE,
+  threshparam = lbounds
+)
+class(inheritance_model) <- c("oglm","oglmx")
+
+# predict -------
+
+
+
+prediction_2step <- predict_two_steps(probit, inheritance_model, estim_data, lbounds)
+tempdf = data.table::data.table(
+  Id = estim_data[["IDENT"]],
+  "Hg" = prediction_2step
+)
+prediction <- prediction_2step
+
+
+confusion <- data.frame('Observed' = estim_data$MTHER, 'Predicted' = prediction, "rn" = seq_len(nrow(estim_data)))
+confusion <- data.table::melt(data.table::setDT(confusion), id.vars = "rn")
+  
+library(ggplot2) 
+
+ggplot(confusion) +
+  geom_histogram(aes(x = factor(value),fill = variable), stat = "count", alpha=0.6, position = 'dodge') +
+  scale_fill_manual(values=c("#69b3a2", "#404080")) +
+  scale_x_discrete(labels= c("No inheritance", get_labs(lbounds))) +
+  theme(legend.title=element_blank(), legend.position = "top",
+        axis.text.x = element_text(angle = 45, hjust=1)) +
+  labs(x = NULL, y = 'Number of individuals')
+
+
 
 
 # MODEL WITH SELECTION ------------
 
+estim_data[, inherited2 := factor(as.numeric(inherited))]
+estim_data[MTHER == 0, MTHER := NA]
+
+
 inheritance_model <- sampleSelection::selection(
-  selection = as.formula('inherited ~ factor(tr_age) + factor(tr_agfinetu)'),
-  outcome = as.formula("MTHER ~ as.factor(SEXE) + lw"),
+  selection = as.formula('inherited2 ~ factor(tr_age) + factor(tr_agfinetu)'),
+  outcome = as.formula("factor(MTHER) ~ as.factor(SEXE) + lw"),
   boundaries = c(-Inf, lbounds, Inf),
-  data = estim_data
+  data = estim_data[order(inherited2)]
 )
 
 inheritance_model <- oglm::oglmx(
   formulaMEAN = as.formula("MTHER ~ as.factor(SEXE) + lw"),
   selection = as.formula('inherited ~ factor(tr_age) + factor(tr_agfinetu)'),
   threshparam  = c(-Inf, lbounds, Inf),
-  data = estim_data[1:1000]
+  data = estim_data
 )
 
 
 
-# MODEL WITHTOUT SELECTION --------
-
-estim_data <- estim_data[get('income')>0]
-estim_data <- estim_data[!is.na(MTHER )]
-inheritance_model_1 <- REtage::ordered_model_threshold(
-  data = data.frame(estim_data[order(MTHER)]),
-  formula = "MTHER ~ lw",
-  link = "logit",
-  constantSD = TRUE,
-  thresholds = lbounds
-)
-
+# OTHER MODELS --------------------
 
 inheritance_model_1_div <- REtage::ordered_model_threshold(
   data = data.frame(estim_data[order(MTHER)]),
