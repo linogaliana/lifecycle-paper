@@ -97,6 +97,8 @@ gamma_0 <- 1.5
 menages_structural2[,'AGE' := age]
 
 
+
+
 output <- mindist::estimation_theta(
   theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
               "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
@@ -116,7 +118,7 @@ output <- mindist::estimation_theta(
   N_moments = 180,
   wealth_var = "PATRI_NET",
   by = c("AGE", "tr_age_2015"),
-  scale_model = "log",
+  scale_model = "level",
   scale_variable_moment1 = "log",
   scale_variable_moment2 = "log",
   stat_moment2 = 'difference',
@@ -129,6 +131,153 @@ output <- mindist::estimation_theta(
 )
 
 
+
+
+output2 <- mindist::estimation_theta(
+  theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
+              "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+              "r" = {if(is.null(r)) 0.03 else NULL}
+  ),
+  beta = beta,
+  r = r,
+  gamma = gamma,
+  approach = "two_step",
+  prediction_function = wealthyR:::model_capitulation,
+  non_ricardian = TRUE,
+  select_moments = select_moments,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = 180,
+  wealth_var = "PATRI_NET",
+  by = c("AGE", "tr_age_2015"),
+  scale_model = "level",
+  scale_variable_moment1 = "log",
+  scale_variable_moment2 = "log",
+  stat_moment2 = 'difference',
+  moment1 = "level",
+  moments_weights = "weight",
+  verbose = TRUE,
+  Hgiven_var = "hg",
+  Hreceived_var = "hr",
+  method = "Nelder-Mead"
+)
+
+
+output3 <- mindist::estimation_theta(
+  theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
+              "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+              "r" = {if(is.null(r)) 0.03 else NULL}
+  ),
+  beta = beta,
+  r = r,
+  gamma = 0.7,
+  approach = "two_step",
+  prediction_function = wealthyR:::model_capitulation,
+  non_ricardian = TRUE,
+  select_moments = select_moments,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = 180,
+  wealth_var = "PATRI_NET",
+  by = c("AGE", "tr_age_2015"),
+  scale_model = "level",
+  scale_variable_moment1 = "log",
+  scale_variable_moment2 = "log",
+  stat_moment2 = 'difference',
+  moment1 = "level",
+  moments_weights = "weight",
+  verbose = TRUE,
+  Hgiven_var = "hg",
+  Hreceived_var = "hr",
+  method = "Nelder-Mead"
+)
+
+
+dataold <- readRDS(file = "./tempfile.rds")  
+inheritance_model <- readRDS("./modele.rds")
+dataold <- capitulation::prepare_data(
+  path_data = "..",
+  inheritance_model = inheritance_model,
+  selection_model = probit,
+  time_0 = "birth",
+  # debt_wealthSurvey = "MTDETTES",
+  taille_tr_age = 5,
+  taille_tr_agfinetu = 2,
+  path_data_suffix = "/Destinie2120", 
+  extension = ".rda",
+  wealthvar_survey = "PATRI_NET"
+)
+dataold[,'hg' := get('H_given')]
+dataold[,'hr' := get('H_received')]
+dataold[,'tr_age_2015' := floor(get("age")/5)*5]
+dataold[, 'AGE' := get('age')]
+
+  
+output4 <- mindist::estimation_theta(
+  theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
+              "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+              "r" = {if(is.null(r)) 0.03 else NULL}
+  ),
+  beta = beta,
+  r = r,
+  gamma = 2,
+  approach = "two_step",
+  prediction_function = wealthyR:::model_capitulation,
+  non_ricardian = FALSE,
+  select_moments = select_moments,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = dataold,
+  N_moments = 180,
+  wealth_var = "PATRI_NET",
+  by = c("AGE", "tr_age_2015"),
+  scale_model = "level",
+  scale_variable_moment1 = "log",
+  scale_variable_moment2 = "log",
+  stat_moment2 = 'difference',
+  moment1 = "level",
+  moments_weights = "weight",
+  verbose = TRUE,
+  Hgiven_var = "hg",
+  Hreceived_var = "hr",
+  method = "Nelder-Mead"
+)
+
+output5 <- mindist::estimation_theta(
+  theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
+              "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+              "r" = {if(is.null(r)) 0.03 else NULL}
+  ),
+  beta = beta,
+  r = r,
+  gamma = 0.75,
+  approach = "two_step",
+  prediction_function = wealthyR:::model_capitulation,
+  non_ricardian = FALSE,
+  select_moments = select_moments,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = dataold,
+  N_moments = 180,
+  wealth_var = "PATRI_NET",
+  by = c("AGE", "tr_age_2015"),
+  scale_model = "level",
+  scale_variable_moment1 = "log",
+  scale_variable_moment2 = "log",
+  stat_moment2 = 'difference',
+  moment1 = "level",
+  moments_weights = "weight",
+  verbose = TRUE,
+  Hgiven_var = "hg",
+  Hreceived_var = "hr",
+  method = "Nelder-Mead"
+)
 
 
 tablelight::view_html(tablelight::light_table(output, type = "html"))
