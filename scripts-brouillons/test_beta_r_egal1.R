@@ -1,0 +1,129 @@
+set.seed(12345)
+#system("chmod +x microCI/install.sh && microCI/install.sh")
+
+source("functions.R")
+
+library(tablelight)
+
+
+
+#unzip("../Destinie.zip", exdir="..")
+#unzip("../Enquete Patrimoine.zip", exdir="..")
+
+
+inheritance_model <- create_inheritance_model(
+  path_survey =  "../Enquete Patrimoine",
+  taille_tr_age = 5,
+  taille_tr_agfinetu = 1,
+  selection = NULL
+)
+
+
+summary(inheritance_model)
+
+saveRDS(
+  inheritance_model, file = "./modele.rds"
+)
+inheritance_model <- readRDS("./modele.rds")
+
+# PART 2 PREPARATION DONNEES ---------------
+
+path_data <- ".."
+
+
+data <- construct_EP(path_data)
+
+
+EP_2015 <- data[['EP_2015']]
+EP_2018 <- data[['EP_2018']]
+EP_lon <- data[['EP_lon']]
+
+# EP_2015[,'PATFISOM' := get('PATFISOM') - get("MTDETTES")]
+# EP_2018[,'PATFISOM' := get('PATFISOM') - get("MTDETTES")]
+# EP_lon[,'PATFISOM_2015' := get('PATFISOM_2015') - get("MTDETTES_2015")]
+# EP_lon[,'PATFISOM_2018' := get('PATFISOM_2018') - get("MTDETTES_2018")]
+
+saveRDS(data, "./data.rds")
+data <- readRDS("./data.rds")
+
+
+data_prediction <- capitulation::prepare_data(
+  path_data = "..",
+  inheritance_model = inheritance_model,
+  time_0 = "birth",
+  # debt_wealthSurvey = "MTDETTES",
+  taille_tr_age = 5,
+  taille_tr_agfinetu = 1,
+  path_data_suffix = "/Destinie2120", 
+  extension = ".rda",
+  wealthvar_survey = "PATRI_NET"
+)
+
+# aws.s3::s3saveRDS(data_prediction, "data_prediction.rds",
+#                   bucket = "groupe-788")
+
+menages_structural2 <- data.table::copy(data_prediction)
+menages_structural2[,'hg' := get('H_given')]
+menages_structural2[,'hr' := get('H_received')]
+menages_structural2[,'tr_age_2015' := floor(get("age")/5)*5]
+menages_structural2[, 'AGE' := get('age')]
+
+
+saveRDS(menages_structural2, file = "./tempfile.rds")  
+
+menages_structural2 <- readRDS("./tempfile.rds")
+# ESTIMATION ---------------
+
+number_moments <- 2L
+scale_wealth <- "log"
+select_moments <- NULL
+estimation_method <- "two_step"
+parameters_estimation <- list("number_moments" = number_moments,
+                              "scale_wealth" = scale_wealth,
+                              "select_moments" = select_moments,
+                              "method" = estimation_method)
+
+beta <- NULL
+r <- 0.03
+gamma <- NULL
+
+# beta_0 <- runif(1, min = 0.5, max = 1.5)
+beta_0 <- 0.9
+# gamma_0 <- runif(1, min = 0.2, max = 5)
+gamma_0 <- 0.6
+
+menages_structural2[,'AGE' := age]
+
+
+output <- mindist::estimation_theta(
+  theta_0 = c("beta" = {if(is.null(beta)) beta_0 else NULL},
+              "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+              "r" = {if(is.null(r)) 0.03 else NULL}
+  ),
+  beta = beta,
+  r = NULL,
+  gamma = gamma,
+  approach = "two_step",
+  prediction_function = wealthyR:::model_capitulation,
+  # approach = estimation_method,
+  select_moments = select_moments,
+  EP_2015 = EP_2015,
+  EP_lon = EP_lon,
+  EP_2018 = EP_2018,
+  data_microsimulated = menages_structural2,
+  N_moments = 180,
+  wealth_var = "PATRI_NET",
+  by = c("AGE", "tr_age_2015"),
+  scale_model = "log",
+  scale_variable_moment1 = "log",
+  scale_variable_moment2 = "log",
+  stat_moment2 = 'difference',
+  moment1 = "level",
+  moments_weights = "weight",
+  verbose = TRUE,
+  Hgiven_var = "hg",
+  Hreceived_var = "hr",
+  method = "Nelder-Mead"
+)
+
+

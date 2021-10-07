@@ -12,3 +12,11 @@ inst/*
 
 *.csv
 *.pdf
+*.txt
+*.7z
+*.doc
+*.docx
+.here
+*.png
+*.zip
+*.rds
