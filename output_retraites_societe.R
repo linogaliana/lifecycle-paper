@@ -37,6 +37,7 @@ simulations <- capitulation::life_cycle_model(
   get_capital_income = TRUE,
   additional_vars = c("tr_age_2015","sexe","findet","ageliq"))
 
+
 simulations <- simulations[age > findet]
 
 clean_data(simulations)

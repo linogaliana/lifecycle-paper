@@ -119,7 +119,7 @@ output <- mindist::estimation_theta(
   wealth_var = "PATRI_NET",
   by = c("AGE", "tr_age_2015"),
   scale_model = "level",
-  scale_variable_moment1 = "log",
+  scale_variable_moment1 = "level",
   scale_variable_moment2 = "log",
   stat_moment2 = 'difference',
   moment1 = "level",
