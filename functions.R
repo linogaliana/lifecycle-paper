@@ -236,7 +236,118 @@ clean_data <- function(data, sex_var = "sexe",
   
 }
 
+clean_data2 <- function(data, sex_var = "SEXE",
+                       diploma_var = "findet",
+                       labor_income_var = "revenu",
+                       total_income_var = "Y",
+                       statut_var = NULL,
+                       year = 2015){
+  
+  
+  data[, c('SEXE') := data.table::fifelse(get(sex_var)==1,
+                                          'Male',
+                                          'Female')]
+  data[, c('tr_diplome') := cut(get(diploma_var), breaks = c(min(get(diploma_var)), 16,18,21,25, max(get(diploma_var))), include.lowest = TRUE)]
+  
+  if (year != 2015) return(data)
+  
+  data[, c(labor_income_var) := get(labor_income_var) + exp(rnorm(nrow(data)))]
+  data[, c(total_income_var) := get(total_income_var) + exp(rnorm(nrow(data)))]
+  
+  data[, c('decile_w') := cut(get(labor_income_var),
+                              quantile(get(labor_income_var),
+                                       probs= 0:10/10, na.rm = TRUE),
+                              labels = 1:10, include.lowest = TRUE
+  )]
+  data[, c('decile_y') := cut(get(total_income_var),
+                              quantile(get(total_income_var),
+                                       probs= 0:10/10, na.rm = TRUE),
+                              labels = 1:10, include.lowest = TRUE
+  )]
+  
+  if (is.null(statut_var)) return(data)
+  
+  data[,'retired' := data.table::fifelse(get(statut_var) == "5",
+                                         "retired","active")]
+  
+  return(data)  
+}
 
+
+plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
+                        weight_observed_data = "POND",
+                        wealth_var = "wealth",
+                        trans = NULL,
+                        trans_survey = NULL,
+                        wealth_var_survey = 'PATRI_NET',
+                        year_var = "annee",
+                        age_var = "age",
+                        age_var_survey = "AGE",
+                        graduation_var = "findet",
+                        observation_year = 2015,
+                        start_year = 2009,
+                        final_year = 2040,
+                        method = "smooth"){
+  
+  
+  simulations2 <- simulations[get(year_var) %between% c(start_year,final_year)]
+  simulations2 <- simulations2[get(age_var)>get(graduation_var)]
+  observed_data2 <- data.table::copy(observed_data)
+  
+  if (has_ricardian) simulations2 <- simulations2[!(non_ricardian)]
+  
+  if (!is.null(trans)){
+    
+    if (trans == "log"){
+      simulations2[,'wealth' := log(wealth)]
+    }
+    if (trans == "exp"){
+      simulations2[,'wealth' := exp(wealth)]
+    }
+  }  
+  
+  if (!is.null(trans_survey)){
+    
+    observed_data2 <- observed_data2[get(wealth_var_survey)>0]
+    
+    if (trans_survey == "log"){
+      observed_data2[,c(wealth_var_survey) := log(get(wealth_var_survey))]
+    }
+    if (trans_survey == "exp"){
+      observed_data2[,c(wealth_var_survey) := exp(get(wealth_var_survey))]
+    }
+  }  
+  
+  if (method != "smooth"){
+    simulations2 <- simulations2[, .("wealth" = median(get(wealth_var), na.rm = TRUE)),
+                                 by = c(year_var, age_var)]
+    simulations2[,'source' := "simulation"]
+  }
+  
+  if (is.null(weight_observed_data)){
+    observed_data2 <- observed_data2[,.("wealth" =  median(get(wealth_var_survey), na.rm = TRUE)),
+                                     by = age_var_survey]
+  } else{
+    observed_data2 <- observed_data2[,.("wealth" =  Hmisc::wtd.quantile(get(wealth_var_survey), weights = get(weight_observed_data),
+                                                                        na.rm = TRUE, probs = .5)),
+                                     by = age_var_survey]
+  }
+  observed_data2[, c(year_var) := observation_year]
+  observed_data2[,'source' := "survey"]
+  data.table::setnames(observed_data2, old = age_var_survey, new = age_var)
+  
+  
+  dataframes <- data.table::rbindlist(list(simulations2, observed_data2),
+                                      use.names = TRUE, fill = TRUE)
+  dataframes[,'size' := .5 + 0.5*as.numeric(get("source") == "survey")]
+  
+  
+  ggplot(dataframes[age %between% c(30,75)]) + geom_line(aes(x = age, y = wealth/1000, color = factor(annee), size = size))
+  
+  ggplot(dataframes[age %between% c(30,75)]) + geom_smooth(aes(x = age, y = wealth/1000, color = factor(annee), linetype = factor(source == "survey")), se = FALSE)
+  
+  
+}
 
 
 estim_model <- function(form = "MTHER ~ lw + age + I((age^2)/100) + AGFINETU + I((AGFINETU^2)/100)",

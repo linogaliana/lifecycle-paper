@@ -9,7 +9,8 @@ EP_data <- wealthyR:::prepare_inheritance_sample(
 EP_data <- EP_data[(MER1E == 3 & PER1E==3) | (!is.na(MTHER))]
 
 
-inheritance_data <- REtage::prepare_estimation(EP_data)
+inheritance_data <- REtage::prepare_estimation(EP_data, taille_tr_age = 5,
+                                               taille_tr_agfinetu = 2)
 
 
 bounds <- c(3,8,15,30,60,100,150,200,250)*1000
@@ -26,7 +27,7 @@ estim_data[,'age' := get('AGE')]
 
 estim_data <- estim_data[get('age') < 80]
 estim_data <- estim_data[get('income')>0]
-
+estim_data <- estim_data[get('age') > 20]
 
 estim_data[, c('N_heritiers') := .N, by = c("annee","IDENT","IDENTTRANS")]
 
@@ -41,7 +42,6 @@ estim_data <- estim_data[order(MTHER)]
 estim_data <- na.omit(estim_data, cols = c("inherited","tr_age","tr_agfinetu","SEXE", "lw", "MTHER"))
 
 
-  
 # SELECTION MODEL -----------------
 
 
@@ -68,38 +68,49 @@ table(confusion_first_step)
 inheritance_model <-  oglm::oglmx(
   data = data.frame(estim_data[MTHER>0]),
   link = "probit",
-  formulaMEAN = "MTHER ~ factor(SEXE) + lw",
+  formulaMEAN = "MTHER ~ factor(SEXE) + lw + factor(tr_age) + factor(tr_agfinetu)",
   constantSD = TRUE,
-  threshparam = lbounds
+  threshparam = lbounds,
+  start_method = "search"
 )
 class(inheritance_model) <- c("oglm","oglmx")
+summary(inheritance_model)
+
+inheritance_model <-  oglm::oglmx(
+  data = data.frame(estim_data[MTHER>0]),
+  link = "probit",
+  formulaMEAN = "MTHER ~ factor(SEXE) + lw + factor(tr_age) + factor(tr_agfinetu) + N_heritiers",
+  constantSD = TRUE,
+  threshparam = lbounds,
+  start_method = "search"
+)
+class(inheritance_model) <- c("oglm","oglmx")
+summary(inheritance_model)
+
 
 # predict -------
 
+prediction_2step <- REtage:::predict_two_steps(probit = probit,
+                                      intreg = inheritance_model, estim_data, scale = "class", lbounds = lbounds)
 
-
-prediction_2step <- predict_two_steps(probit, inheritance_model, estim_data, lbounds)
-tempdf = data.table::data.table(
-  Id = estim_data[["IDENT"]],
-  "Hg" = prediction_2step
-)
 prediction <- prediction_2step
 
 
-confusion <- data.frame('Observed' = estim_data$MTHER, 'Predicted' = prediction, "rn" = seq_len(nrow(estim_data)))
+confusion <- data.frame('Observed' = estim_data$MTHER, 'Predicted' = prediction_2step$prediction, "rn" = seq_len(nrow(estim_data)))
 confusion <- data.table::melt(data.table::setDT(confusion), id.vars = "rn")
   
 library(ggplot2) 
 
-ggplot(confusion) +
+p <- ggplot(confusion) +
   geom_histogram(aes(x = factor(value),fill = variable), stat = "count", alpha=0.6, position = 'dodge') +
   scale_fill_manual(values=c("#69b3a2", "#404080")) +
-  scale_x_discrete(labels= c("No inheritance", get_labs(lbounds))) +
+  scale_x_discrete(labels= c("No inheritance", REtage:::get_labs(lbounds))) +
   theme(legend.title=element_blank(), legend.position = "top",
         axis.text.x = element_text(angle = 45, hjust=1)) +
   labs(x = NULL, y = 'Number of individuals')
-
-
+p
+ggsave(filename = "V:/DG75-G210/Lino/microsimulation/estimation/modele-heritage/predict.png", plot = p,
+       width = 12, height = 8)
 
 
 # MODEL WITH SELECTION ------------
