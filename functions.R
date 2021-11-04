@@ -237,11 +237,11 @@ clean_data <- function(data, sex_var = "sexe",
 }
 
 clean_data2 <- function(data, sex_var = "SEXE",
-                       diploma_var = "findet",
-                       labor_income_var = "revenu",
-                       total_income_var = "Y",
-                       statut_var = NULL,
-                       year = 2015){
+                        diploma_var = "findet",
+                        labor_income_var = "revenu",
+                        total_income_var = "Y",
+                        statut_var = NULL,
+                        year = 2015){
   
   
   data[, c('SEXE') := data.table::fifelse(get(sex_var)==1,
@@ -274,7 +274,9 @@ clean_data2 <- function(data, sex_var = "SEXE",
 }
 
 
-plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
+plot_K_age2 <- function(simulations, observed_data,
+                        lang = c("eng","fr"),
+                        has_ricardian = FALSE,
                         weight_observed_data = "POND",
                         wealth_var = "wealth",
                         trans = NULL,
@@ -289,6 +291,7 @@ plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
                         final_year = 2040,
                         method = "smooth"){
   
+  lang <- match.arg(lang)
   
   simulations2 <- simulations[get(year_var) %between% c(start_year,final_year)]
   simulations2 <- simulations2[get(age_var)>get(graduation_var)]
@@ -299,10 +302,14 @@ plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
   if (!is.null(trans)){
     
     if (trans == "log"){
-      simulations2[,'wealth' := log(wealth)]
+      simulations2[,c(wealth_var) := log(get(wealth_var))]
     }
     if (trans == "exp"){
-      simulations2[,'wealth' := exp(wealth)]
+      simulations2[,c(wealth_var) := exp(get(wealth_var))]
+    }
+    
+    if (trans == "div_1000"){
+      simulations2[, c(wealth_var) := get(wealth_var)/1000]
     }
   }  
   
@@ -316,6 +323,10 @@ plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
     if (trans_survey == "exp"){
       observed_data2[,c(wealth_var_survey) := exp(get(wealth_var_survey))]
     }
+    if (trans == "div_1000"){
+      observed_data2[,c(wealth_var_survey) := get(wealth_var_survey)/1000]
+    }
+    
   }  
   
   if (method != "smooth"){
@@ -341,12 +352,44 @@ plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
                                       use.names = TRUE, fill = TRUE)
   dataframes[,'size' := .5 + 0.5*as.numeric(get("source") == "survey")]
   
+  dataframes <- split(dataframes, by = c("annee", "source"))
+  dataframes <- data.table::rbindlist(
+    lapply(dataframes, function(d) d[,predict := predict(loess(wealth~age, data = d))])
+  )
   
-  ggplot(dataframes[age %between% c(30,75)]) + geom_line(aes(x = age, y = wealth/1000, color = factor(annee), size = size))
+  if (wealth_var == "wealth"){
+    ylab <- ifelse(lang == "eng", 
+                   "Simulated wealth \n(thousand euros)",
+                   "Richesse simulée \n(en milliers d'euros)")
+  } else{
+    ylab <- ifelse(lang == "eng", 
+                   "Simulated capital income \n(% total income)",
+                   "Revenus du capital simulés \n(% total income)")
+  }
+  if (lang == "eng"){
+    labelsource <- c("Simulated", 'Observed (wealth survey 2015)')
+  } else{
+    labelsource <-  c("Simulée", "Observée (patrimoine 2015)")
+  }
   
-  ggplot(dataframes[age %between% c(30,75)]) + geom_smooth(aes(x = age, y = wealth/1000, color = factor(annee), linetype = factor(source == "survey")), se = FALSE)
+  p <- ggplot(dataframes[age %between% c(30,75)],
+              aes(x = age, y = wealth, color = factor(annee),
+                  linetype = factor(source == "survey"))) + 
+    geom_smooth(se = FALSE)
+  p <- p + scale_color_viridis_d()
   
+  p <- p + ggplot2::labs(y = ylab, x = "Age") +
+    theme_bw() +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=22),
+          axis.title=element_text(size=28,face="bold")) +
+    ggplot2::scale_linetype_manual(breaks = c(FALSE,TRUE),
+                                   values=c("solid", "dashed"),
+                                   labels = labelsource)  +
+    guides(color = "none", linetype = guide_legend(title="Source")) +
+    theme(legend.position="top")
   
+  return(p)
 }
 
 
@@ -449,12 +492,12 @@ estim_model <- function(form = "MTHER ~ lw + age + I((age^2)/100) + AGFINETU + I
 
 
 
-get_quantiles <- function(dt, yvar, pondvar = NULL){
+get_quantiles <- function(dt, yvar, pondvar = NULL, p = c(1:9, 9.5, 9.9)/10){
   
   if (is.null(pondvar)){
-    x <- dt[,quantile(get(yvar), probs = c(1:9, 9.5, 9.9)/10)]
+    x <- dt[,quantile(get(yvar), probs = p)]
   } else{
-    x <- dt[,Hmisc::wtd.quantile(get(yvar), probs = c(1:9, 9.5, 9.9)/10,
+    x <- dt[,Hmisc::wtd.quantile(get(yvar), probs = p,
                                  weights = get(pondvar))]
   }
   

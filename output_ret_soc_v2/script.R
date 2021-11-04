@@ -99,26 +99,50 @@ confusion <- data.table::melt(data.table::setDT(confusion), id.vars = "rn")
 
 
 
-p <- ggplot(confusion) +
-  geom_histogram(aes(x = factor(value),fill = variable), stat = "count", alpha=0.6, position = 'dodge') +
-  scale_x_discrete(labels= c("No inheritance", REtage:::get_labs(lbounds))) +
-  theme(legend.title=element_blank(), legend.position = "top",
-        axis.text.x = element_text(angle = 45, hjust=1)) +
-  labs(x = NULL, y = 'Number of individuals')
-p <- p +
-  ggplot2::labs(y = "Nombre d'individus",
-                x = "Valeur héritée, en tranches") +
-  ggplot2::scale_fill_manual(breaks = c("Observed","Predicted"),
-                             values=c("#69b3a2", "#404080"),
-                             labels = c("Observée",
-                                        "Simulée")) +
-  labs(fill = NULL) +
-  theme(text = element_text(size=20),
-        axis.text=element_text(size=28))
+plot_confusion <- function(langage = c('fr','eng')){
+  
+  langage <- match.arg(langage)
+  labs_x <- c(ifelse(langage == "eng", "No inheritance","Pas d'héritage"),
+              REtage:::get_labs(lbounds)
+  )
+  ylab <- ifelse(langage == "eng", 'Number of individuals', "Nombre d'individus")
+  xlab <- ifelse(langage == "eng", "Inherited amount, by survey thresholds",
+                 "Valeur héritée, en tranches")
+  labels_legend <- if(langage == "eng") c("Observed","Predicted") else c("Observée", "Simulée")
 
-ggplot2::ggsave(plot = p, filename = "./output_ret_soc_v2/fig01_inheritance_predicted.pdf",
+  p <- ggplot(confusion) +
+    geom_histogram(aes(x = factor(value),fill = variable),
+                   stat = "count", alpha=0.6, position = 'dodge') +
+    scale_x_discrete(labels= labs_x) +
+    theme(legend.title=element_blank(), legend.position = "top",
+          axis.text.x = element_text(angle = 45, hjust=1)) +
+    labs(x = NULL, y = ylab)
+  
+  p <- p +
+    ggplot2::labs(y = ylab,
+                  x = xlab) +
+    ggplot2::scale_fill_manual(breaks = c("Observed","Predicted"),
+                               values=c("#69b3a2", "#404080"),
+                               labels = labels_legend) +
+    labs(fill = NULL) +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=20),
+          axis.title = element_text(size = 28, face="bold"))
+
+  return(p)
+}
+
+p_french <- plot_confusion('fr')
+p_english <- plot_confusion('en')
+
+
+ggplot2::ggsave(plot = p_french, filename = "./output_ret_soc_v2/fig01_inheritance_predicted.pdf",
                 width = 13, height = 9)
-ggplot2::ggsave(plot = p, filename = "./output_ret_soc_v2/fig01_inheritance_predicted.png",
+ggplot2::ggsave(plot = p_french, filename = "./output_ret_soc_v2/fig01_inheritance_predicted.png",
+                width = 13, height = 9)
+ggplot2::ggsave(plot = p_english, filename = "./output_ret_soc_v2/fig01_inheritance_predicted_DT.pdf",
+                width = 13, height = 9)
+ggplot2::ggsave(plot = p_english, filename = "./output_ret_soc_v2/fig01_inheritance_predicted_DT.png",
                 width = 13, height = 9)
 
 
@@ -210,25 +234,47 @@ EP_lon[, c('SEXE') := data.table::fifelse(get('SEXE')==1,
                                           'Female')]
 
 
+# K(AGE) ET rK(AGE) -----------------------------
+
+kage_fr <- plot_K_age2(simulations,EP_2015, method = "median", has_ricardian = FALSE,
+                        trans = "div_1000", trans_survey = "div_1000",
+                        lang = "fr")
+
+kage_eng <- plot_K_age2(simulations,EP_2015, method = "median", has_ricardian = FALSE,
+                    trans = "div_1000", trans_survey = "div_1000")
 
 
-kage <- plot_K_age2(simulations[age>findet],EP_2015, method = "median", has_ricardian = FALSE)
-kage <- kage + 
-  ggplot2::scale_color_viridis_d() +
-  ggplot2::labs(y = "Richesse simulée (en milliers d'euros)", x = "Age") +
-  theme(text = element_text(size=20),
-        axis.text=element_text(size=28)) +
-  ggplot2::scale_linetype_manual(breaks = c(FALSE,TRUE),
-                                 values=c("solid", "dashed"),
-                                 labels = c("Simulée",
-                                            "Observée (patrimoine 2015)"))  +
-  guides(color = "none", linetype = guide_legend(title="Source")) +
-  theme(legend.position="top")
+ggplot2::ggsave(plot = kage_fr, filename = "./output_ret_soc_v2/fig01_kage2.pdf",
+                width = 13, height = 9)
+ggplot2::ggsave(plot = kage_fr, filename = "./output_ret_soc_v2/fig01_kage2.png",
+                width = 13, height = 9)
 
-ggplot2::ggsave(plot = kage, filename = "./output_ret_soc_v2/fig01_kage2.pdf",
+ggplot2::ggsave(plot = kage_eng, filename = "./output_ret_soc_v2/fig01_kage2_DT.pdf",
+                width = 13, height = 9)
+
+EP_2015[,'rKY' := r*get("PATRI_NET")/(get("labor_income") + r*get("PATRI_NET"))]
+
+rkage <- plot_K_age2(simulations,EP_2015, method = "median", has_ricardian = FALSE,
+                     wealth_var = "rKY", wealth_var_survey = "rKY",
+                     lang = "eng") +
+  ggplot2::scale_y_continuous(labels = scales::percent)
+rkage_fr <- plot_K_age2(simulations,EP_2015, method = "median", has_ricardian = FALSE,
+                     wealth_var = "rKY", wealth_var_survey = "rKY",
+                     lang = "fr") +
+  ggplot2::scale_y_continuous(labels = scales::percent)
+
+
+ggplot2::ggsave(plot = rkage, filename = "./output_ret_soc_v2/fig01b_rkage_DT.pdf",
                 width = 13, height = 9)
 
 
+ggplot2::ggsave(plot = rkage_fr, filename = "./output_ret_soc_v2/fig01b_rkage.pdf",
+                width = 13, height = 9)
+ggplot2::ggsave(plot = rkage_fr, filename = "./output_ret_soc_v2/fig01b_rkage.png",
+                width = 13, height = 9)
+
+
+# PLOT DES MOMENTS -----------------------------------
 
 
 df_moment2 <- wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
@@ -263,7 +309,9 @@ df_moment2 <- wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018
                                             by = c("tr_age_2015", "tr_age_2015"))
 
 
-plot_moment_age_wide <-function(df_moment2, ages = c(30,65)){
+plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")){
+  
+  lang <- match.arg(lang)
   
   tempdat <- data.table::copy(df_moment2)
   tempdat[, 'cumsum' := cumsum(weight)]
@@ -273,29 +321,57 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65)){
   tempdat <- split(tempdat, by = "moment")
   tempdat <- lapply(tempdat, data.table::melt, id.vars = c("Nmoment", "moment"))
   
+  if (lang == "fr"){
+    labs1 <- list(x = "Age",
+                  y = " (arcsinh) Patrimoine médian",
+                  labels = c("Simulée","Observée"),
+                  y2 = 'Densité')
+  } else{
+    labs1 <- list(x = "Age group",
+                  y = "(arcsinh) Median wealth",
+                  labels = c("Simulated","Observed"),
+                  y2 = "Density")  
+  }
   
   m1 <- ggplot2::ggplot(tempdat[["1"]][variable != "weight"]) +
     ggplot2::geom_bar(ggplot2::aes(x = Nmoment, y = value,
                                    fill = variable), position = "dodge",
                       stat='identity', width=.5) +
-    ggplot2::labs(x = "Moment", y = "Median wealth") +
-    ggplot2::scale_fill_manual(values = c('moment_simulations' = 'black',
-                                          'moment_data' = 'royalblue'),
-                               labels = c("Simulée","Observée")) +
+    ggplot2::labs(x = labs1$x, y = labs1$y) +
+    ggplot2::scale_fill_manual(values = c('moment_simulations' = "#69b3a2",
+                                          'moment_data' = "#404080"),
+                               labels = labs1$labels) +
     ggplot2::guides(fill = ggplot2::guide_legend(reverse=TRUE)) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "top") +
-    ggplot2::labs(y = "Part du patrimoine de la\nclasse d'âge dans le total",
+    ggplot2::labs(y = labs1$y,
                   fill = NULL) +
     ggplot2::theme(text = ggplot2::element_text(size=28),
                    axis.text=ggplot2::element_text(size=28))
   
+  m1 + scale_y_continuous(
+    name = "mpg (US)", 
+    sec.axis = sec_axis(~ . * 1.20, name = "mpg (UK)")
+  )
+  
   m1b <- ggplot2::ggplot(tempdat[["1"]][variable == "weight"]) +
     ggplot2::geom_bar(ggplot2::aes(x = Nmoment, y = value), stat = 'identity') +
     ggplot2::geom_point(ggplot2::aes(x = Nmoment, y = value), color = 'red') +
-    ggplot2::labs(y = "Density", x = "Moment") +
+    ggplot2::labs(y = labs1$y2, x = labs1$x) +
     ggplot2::scale_y_reverse()
   
+  
+  if (lang == "fr"){
+    labs2 <- list(x = "Classe d'âge en 2015",
+                  y = "Evolution sur trois ans\ndu patrimoine financier",
+                  labels = c("Simulée","Observée"),
+                  y2 = 'Densité')  
+  } else{
+    labs2 <- list(x = "Age group in 2015",
+                  y =  "3-year rolling growth rate",
+                  labels = c("Simulated","Observed"),
+                  y2 = "Density")  
+  }
   
   m2 <- ggplot2::ggplot(tempdat[["2"]][variable != "weight"], ggplot2::aes(x = Nmoment - 13,
                                                                            y = value,
@@ -305,16 +381,15 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65)){
     ggplot2::geom_line() +
     ggplot2::geom_point() +
     ggplot2::geom_hline(yintercept = 0L) +
-    ggplot2::labs(title = "3-year rolling growth rate",
-                  x = 'Age in wave 1',
-                  y = "Moment") +
+    ggplot2::labs(x = labs2$x,
+                  y = labs2$y) +
     ggplot2::scale_color_manual(values = c('moment_simulations' = 'black',
                                            'moment_data' = 'royalblue'),
-                                labels = c("Simulée","Observée")) +
+                                labels = labs2$labels) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "bottom") +
-    ggplot2::labs(y = "Evolution sur trois ans\ndu patrimoine financier",
-                  x = "Age en 2015", title = "") +
+    ggplot2::labs(y = labs2$y,
+                  x = labs2$x, title = "") +
     ggplot2::scale_y_continuous(labels = scales::percent) +
     ggplot2::theme(text = ggplot2::element_text(size=28),
                    axis.text=ggplot2::element_text(size=28)) +
@@ -323,7 +398,7 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65)){
   m2b <- ggplot2::ggplot(tempdat[["2"]][variable == "weight"]) +
     ggplot2::geom_bar(ggplot2::aes(x = Nmoment - 13, y = value), stat = 'identity') +
     ggplot2::geom_point(ggplot2::aes(x = Nmoment - 13, y = value), color = 'red') +
-    ggplot2::labs(y = "Density", x = "Moment") +
+    ggplot2::labs(y = labs2$y2, x = labs2$x) +
     ggplot2::scale_y_reverse()
   
   return(
@@ -335,6 +410,7 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65)){
 plots <- plot_moment_age_wide(df_moment2)
 moment1 <- gridExtra::grid.arrange(plots[[1]], plots[[2]])
 moment2 <- gridExtra::grid.arrange(plots[[3]], plots[[4]])
+plots_eng <- plot_moment_age_wide(df_moment2, lang = "eng")
 
 ggplot2::ggsave(plot = moment1, "./output_ret_soc_v2/fig03_moment1.pdf",
                 width = 18, height = 20)
@@ -349,6 +425,14 @@ ggplot2::ggsave(plot = plots[[3]], "./output_ret_soc_v2/fig03_moment2_part1.pdf"
 ggplot2::ggsave(plot = plots[[4]], "./output_ret_soc_v2/fig03_moment2_part2.pdf",
                 width = 18, height = 20)
 
+ggplot2::ggsave(plot = plots_eng[[1]], "./output_ret_soc_v2/fig03_moment1_part1_DT.pdf",
+                width = 18, height = 10)
+ggplot2::ggsave(plot = plots_eng[[2]], "./output_ret_soc_v2/fig03_moment1_part2_DT.pdf",
+                width = 18, height = 10)
+ggplot2::ggsave(plot = plots_eng[[3]], "./output_ret_soc_v2/fig03_moment2_part1_DT.pdf",
+                width = 18, height = 10)
+ggplot2::ggsave(plot = plots_eng[[4]], "./output_ret_soc_v2/fig03_moment2_part2_DT.pdf",
+                width = 18, height = 10)
 
 
 # Figure 5: fit  ===============================
@@ -358,74 +442,141 @@ EP_2018[, 'net_fin_wealth' := get('PATRI_NET')]
 EP_2015[, 'net_fin_wealth' := get('PATRI_NET')]
 
 
-df <- data.table::data.table(
-  "Actifs financiers (enquete patrimoine, individualisée)" =
-    get_quantiles(EP_2018, 'PATRI_BRUT', "POND_TRANS"),
-  "Actifs - passifs financiers (enquete patrimoine, individualisée)" =
-    get_quantiles(EP_2018, 'net_fin_wealth', "POND_TRANS"),
-  "Modèle simulé (r = 3%)" = as.numeric(
-    simulations[, round(quantile(get('wealth'), probs = c(1:9, 9.5, 9.9)/10))]
-  ),
-  "q" = 100*c(1:9, 9.5, 9.9)/10
-)
-df <- data.table::melt(df, id.vars = "q")
 
+plot_fit_distribution <- function(EP_2018, simulations, lang = c('fr','eng')){
+  
+  lang <- match.arg(lang)
+  
+  g1 <- ifelse(lang == "eng",
+               "Net wealth (wealth survey, individualized)",
+               "Richesse nette (enquête patrimoine, individualisée)")
+  g2 <- ifelse(lang == "eng",
+               "Simulated wealth",
+               "Richesse nette simulée")
+  list_p <- c(seq(1,9.5, by = 0.5), 9.9)/10
+  df <- data.table::data.table(
+    g1 =
+      get_quantiles(EP_2018, 'PATRI_NET', "POND_TRANS", p = list_p),
+    g2 = as.numeric(
+      simulations[annee==2018, round(quantile(get('wealth'), probs = list_p))]
+    ),
+    "q" = 100*list_p
+  )
+  data.table::setnames(df, old = c('g1','g2'), new = c(g1,g2))
+  df <- data.table::melt(df, id.vars = "q")
+  
+  
+  lang <- match.arg(lang)
+  if (lang == "fr"){
+    labs1 <- list(x = "Quantile de la distribution du patrimoine net",
+                  y = "Patrimoine",
+                  labels = c("Observé (Patrimoine 2018)",
+                             "Simulé"))
+  } else{
+    labs1 <- list(x = "Net wealth distribution quantile",
+                  y = "Wealth survey",
+                  labels = c("Observed (2018 Wealth survey)",
+                             "Simulated"))
+  }
+  
+  p_fit <- ggplot(df) +
+    # geom_line(aes(x = q, y = value, color = variable,
+    #               size = grepl("simulé", variable))) +
+    geom_line(aes(x = q, y = asinh(value), color = variable,
+                  size = grepl("simulé", variable))) +
+    geom_point(aes(x = q, y = asinh(value), color = variable)) +
+    # geom_point(aes(x = q, y = value, color = variable)) +
+    scale_size_manual(values = c(0.1, 2), 
+                      labels = labs1$labels) +
+    geom_hline(yintercept = 0) +
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
+    guides(col = guide_legend(nrow = 2)) +
+    labs(x = labs1$x,
+         y = labs1$y,
+         size = NULL,
+         color = NULL) +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=28))
+  
+  
+  p_fit_level <- ggplot(df) +
+    # geom_line(aes(x = q, y = value, color = variable,
+    #               size = grepl("simulé", variable))) +
+    geom_line(aes(x = q, y = value, color = variable,
+                  size = grepl("simulé", variable))) +
+    geom_point(aes(x = q, y = value, color = variable)) +
+    # geom_point(aes(x = q, y = value, color = variable)) +
+    scale_size_manual(values = c(0.1, 2), 
+                      labels = labs1$labels) +
+    geom_hline(yintercept = 0) +
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
+    guides(col = guide_legend(nrow = 2)) +
+    labs(x = labs1$x,
+         y = labs1$y,
+         size = NULL,
+         color = NULL) +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=28))
+  # scale_y_continuous(trans = tn)
+  
+  return(list(p_fit, p_fit_level))
+}
 
+p_fit1 <- plot_fit_distribution(EP_2018, simulations)
+p_fit2 <- plot_fit_distribution(EP_2018, simulations, "eng")
 
-# library(scales)
-# tn <- trans_new("abslog",
-#                 function(x) sign(x)*log(abs(x)),
-#                 function(y) exp(abs(y))*sign(y),
-#                 domain=c(-Inf, Inf))
-
-p_fit <- ggplot(df) +
-  # geom_line(aes(x = q, y = value, color = variable,
-  #               size = grepl("simulé", variable))) +
-  geom_line(aes(x = q, y = asinh(value), color = variable,
-                size = grepl("simulé", variable))) +
-  geom_point(aes(x = q, y = asinh(value), color = variable)) +
-  # geom_point(aes(x = q, y = value, color = variable)) +
-  scale_size_manual(values = c(0.1, 2), 
-                    labels = c("Observé (Patrimoine 2018)",
-                               "Simulé")) +
-  geom_hline(yintercept = 0) +
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
-  guides(col = guide_legend(nrow = 3)) +
-  labs(x = "Quantile de la distribution du patrimoine financier",
-       y = "Patrimoine",
-       size = NULL,
-       color = NULL) +
-  theme(text = element_text(size=20),
-        axis.text=element_text(size=28))
-
-
-p_fit_level <- ggplot(df) +
-  # geom_line(aes(x = q, y = value, color = variable,
-  #               size = grepl("simulé", variable))) +
-  geom_line(aes(x = q, y = value, color = variable,
-                size = grepl("simulé", variable))) +
-  geom_point(aes(x = q, y = value, color = variable)) +
-  # geom_point(aes(x = q, y = value, color = variable)) +
-  scale_size_manual(values = c(0.1, 2), 
-                    labels = c("Observé (Patrimoine 2018)",
-                               "Simulé")) +
-  geom_hline(yintercept = 0) +
-  theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
-  guides(col = guide_legend(nrow = 3)) +
-  labs(x = "Quantile de la distribution du patrimoine financier",
-       y = "Patrimoine",
-       size = NULL,
-       color = NULL) +
-  theme(text = element_text(size=20),
-        axis.text=element_text(size=28))
-# scale_y_continuous(trans = tn)
-
-
-ggplot2::ggsave(plot = p_fit, "./output_ret_soc/fig05_fit.png",
+ggplot2::ggsave(plot = p_fit1[[1]], "./output_ret_soc_v2/fig05_fit.png",
                 width = 12, height = 8)
-ggplot2::ggsave(plot = p_fit_level, "./output_ret_soc/fig05_fit_level.png",
+ggplot2::ggsave(plot = p_fit1[[2]], "./output_ret_soc_v2/fig05_fit_level.png",
                 width = 12, height = 8)
-data.table::fwrite(p_fit$data, file = "./output_ret_soc/fig05_data.csv")
+data.table::fwrite(p_fit$data, file = "./output_ret_soc_v2/fig05_data.csv")
+ggplot2::ggsave(plot = p_fit2[[1]], "./output_ret_soc_v2/fig05_fit_DT.pdf",
+                width = 16, height = 8)
+ggplot2::ggsave(plot = p_fit2[[2]], "./output_ret_soc_v2/fig05_fit_level_DT.pdf",
+                width = 16, height = 8)
+
+
+# top income shares --------------------------
+
+simul_copy <- data.table::copy(simulations)
+p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Fraction detained by top 10%",
+       color = NULL) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme(axis.text=element_text(size=24),
+        axis.title=element_text(size=24,face="bold"),
+        legend.text=element_text(size=24)) +
+  scale_color_manual(labels = c("Labor income","Total income",'Wealth'),
+                     values = c("#F8766D", "#00BA38", "#619CFF"))
+ggsave(plot = p3, sprintf("./output_ret_soc_v2/top10.pdf", dir), width = 12, height = 8)
+
+simul_copy <- data.table::copy(simulations)
+p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate", threshold = 0.99) +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Fraction detained by top 1%",
+       color = NULL) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme(axis.text=element_text(size=24),
+        axis.title=element_text(size=24,face="bold"),
+        legend.text=element_text(size=24)) +
+  scale_color_manual(labels = c("Labor income","Total income",'Wealth'),
+                     values = c("#F8766D", "#00BA38", "#619CFF"))    
+
+ggsave(plot = p3, sprintf("./output_ret_soc_v2/top1.pdf", dir), width = 12, height = 8)
+
+
+p2 <- capitulation::plot_gini(simul_copy,
+                              langage = "English",
+                              labels = c("Labor income", "Net wealth", "Total income"),
+                              vars = c("revenu", "wealth", "Y"),
+                              negative_values = "truncate") +
+  theme(axis.text=element_text(size=24),
+        axis.title=element_text(size=24,face="bold"),
+        legend.text=element_text(size=24))
+ggsave(plot = p2, sprintf("./output_ret_soc_v2/gini_evolution_noneg.pdf", dir), width = 12, height = 8)
 
 
 
@@ -440,8 +591,8 @@ simulations[, c('retired') := data.table::fifelse(get('age') <= get("ageliq"),
                                                   'retired')]
 
 EP_2015[, c('retired') := data.table::fifelse(get('SITUA')=="5",
-                                             'retired',
-                                             'active')]
+                                              'retired',
+                                              'active')]
 EP_lon[, c('retired') := data.table::fifelse(get('SITUA_2015')=="5",
                                              'retired',
                                              'active')]
@@ -479,25 +630,36 @@ tablelight:::stack_summary(object = list(EP_lon2, EP_lon2, EP_lon2,
 
 # Table 3: inheritance ------------------
 
-
 cat(
   tablelight::light_table(
-    inheritance_model, type = "latex", title = "Heritage: outcome model",
+    list(probit, inheritance_model), type = "latex",
+    title = "Heritage: models for outcome and selection",
     label = "tab:heritage",
-    dep.var.labels = "Amount inherited",
-    column.labels = "\\textit{Model in log}",
-    covariate.labels = c('Sexe', "Log income",
-                         c(sprintf("Age between %s and %s",
-                                   seq(25, 75, by = 5),
-                                   seq(30, 80, by = 5)
-                         )),
-                         c(sprintf("Graduation age (%s or %s)",
-                                   seq(14, 30, by = 2),
-                                   seq(15, 31, by = 2)
-                         )                         
-                         )
+    dep.var.labels = c("Amount inherited (log)", "Probability to get a bequest"),
+    dep.var.separate = 1,
+    column.labels = c("(\\textsc{Outcome})", "(\\textsc{Selection})"),
+    # omit = names(probit$coefficients)[startsWith("factor(tr_ag", x = names(probit$coefficients))],
+    covariate.labels = c(
+      c(sprintf("Age between %s and %s",
+                seq(25, 75, by = 5),
+                seq(30, 80, by = 5)
+      )),
+      c(sprintf("Graduation age (%s or %s)",
+                seq(14, 28, by = 2),
+                seq(15, 29, by = 2)
+      )
+      ),
+      "Graduation age (higher than 30)",
+      'Sexe (reference : Male)',
+      "Log income",
+      "$\\log(\\sigma)$"
     ),
-    add.lines = "Model estimated by interval regression (ordered probit regression with known thresholds) using declared received bequests in \\textit{Enquête Patrimoine 2009}"
+    stats.add = c("Controls for age & Yes & Yes",
+                  "Controls for graduation age & Yes & Yes"),
+    add.lines = c(
+      "Model estimated by interval regression (ordered probit regression with known thresholds) using declared received bequests in \\textit{Enquête Patrimoine 2015}",
+      "Only the subset of individuals whom both parents are deceased is included in the sample"
+    )
   ),
   sep = "\n"
 )
@@ -588,8 +750,8 @@ table_share <- merge(
 )[order(-Group)]
 
 
-EP_2015[,'wealth_trunc' := pmax(0, get('w_real'))]
-EP_2015[,'wealth_trunc' := get('w_real') + exp(rnorm(nrow(EP_2015)))]
+EP_2015[,'wealth_trunc' := pmax(0, get('PATRI_NET'))]
+EP_2015[,'wealth_trunc' := get('PATRI_NET') + exp(rnorm(nrow(EP_2015)))]
 
 EP_2015[,'Y' := get("labor_income") + r*get("w_real")]
 
@@ -625,7 +787,7 @@ latex_table <- c(
   "\\label{tab: concentration}",
   "\\begin{tabular}{lrrr}",
   "\\hline",
-  "\\textsc{Group} & \\textsc{Labor income} & \\textsc{Total income} & \\textsc{Financial wealth} \\\\",
+  "\\textsc{Group} & \\textsc{Labor income} & \\textsc{Total income} & \\textsc{Net wealth} \\\\",
   "\\hline",
   paste0(c("\\multicolumn{4}{c}{\\textsc{Wealth survey}}",
            paste(df2, collapse = " \\\\ "),
@@ -708,3 +870,50 @@ tablelight:::stack_summary(object = list(simulations_2015,
                            #                           type = "dataframe"
 )
 
+
+# GMM TABLE --------------------
+
+out <- readRDS("./gamma-loop/gamma_1.rds")
+
+cat(
+  tablelight::light_table(
+    out,
+    add.lines = paste0(
+      "Model estimated by minimum distance using aggregate moments ",
+      "from microsimulated data and wealth surveys. ",
+      "Moments in wealth survey are defined in Table \\ref{tab:data}.",
+      " The same moments are computed in microsimulated data."
+    ),
+    dep.var.labels = "\\textsc{Estimates}",
+    column.labels = "",
+    title = "Estimation results",
+    label = "tab: estimation table",
+    covariate.labels = "$\\beta$"
+  ),
+  sep = "\n"
+)
+
+
+# ROBUSTNESS TABLE -----------------
+
+out2 <- readRDS("./gamma-loop/gamma_08.rds")
+out3 <- readRDS("./gamma-loop/gamma_12.rds")
+
+cat(
+  tablelight::light_table(
+    list(out2, out3, out),
+    add.lines = paste0(
+      "Model estimated by minimum distance using aggregate moments ",
+      "from microsimulated data and wealth surveys. ",
+      "Moments in wealth survey are defined in Table \\ref{tab:data}.",
+      " The same moments are computed in microsimulated data."
+    ),
+    dep.var.labels = "Exogeneous risk aversion coefficient $\\gamma$",
+    column.labels = c("$\\gamma$=0.8","$\\gamma=1.2$", "$\\gamma$ = 1"),
+    stats.var.separate = 3,
+    title = "Estimated parameters for different values of $\\gamma$",
+    label = "tab: robustness r GMM",
+    covariate.labels = "$\\beta$"
+  ),
+  sep = "\n"
+)
