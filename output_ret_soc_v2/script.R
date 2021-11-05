@@ -314,6 +314,12 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
   lang <- match.arg(lang)
   
   tempdat <- data.table::copy(df_moment2)
+  tempdat[,'Nmoment' := data.table::fifelse(
+    cumsum(weight) <= 1, paste0(as.character(20+(Nmoment-1)*5),"-",
+                                                   as.character(20+Nmoment*5)),
+    paste0(as.character(30+(Nmoment-14)*5),"-",
+           as.character(30+(Nmoment-13)*5))
+    )]
   tempdat[, 'cumsum' := cumsum(weight)]
   tempdat[, 'moment' := 1 + as.numeric(cumsum>1)]
   tempdat[, c("cumsum") := NULL]
@@ -323,13 +329,15 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
   
   if (lang == "fr"){
     labs1 <- list(x = "Age",
-                  y = " (arcsinh) Patrimoine médian",
+                  y = "Patrimoine médian \n(arcsinh)",
                   labels = c("Simulée","Observée"),
+                  col = "Poids dans l'estimation",
                   y2 = 'Densité')
   } else{
-    labs1 <- list(x = "Age group",
-                  y = "(arcsinh) Median wealth",
+    labs1 <- list(x = "Age",
+                  y = "Median wealth \n(arcsinh)",
                   labels = c("Simulated","Observed"),
+                  col = "Weight in estimation",
                   y2 = "Density")  
   }
   
@@ -337,63 +345,70 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
     ggplot2::geom_bar(ggplot2::aes(x = Nmoment, y = value,
                                    fill = variable), position = "dodge",
                       stat='identity', width=.5) +
+    geom_line(data = tempdat[["1"]][variable == "weight"],
+              aes(x = Nmoment, y = 100*value, color = labs1$col, group = 1)) +
+    geom_point(data = tempdat[["1"]][variable == "weight"],
+              aes(x = Nmoment, y = 100*value, color = labs1$col)) +
     ggplot2::labs(x = labs1$x, y = labs1$y) +
     ggplot2::scale_fill_manual(values = c('moment_simulations' = "#69b3a2",
                                           'moment_data' = "#404080"),
                                labels = labs1$labels) +
+    ggplot2::scale_color_manual('', values = "red", breaks = labs1$col) +
     ggplot2::guides(fill = ggplot2::guide_legend(reverse=TRUE)) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "top") +
     ggplot2::labs(y = labs1$y,
                   fill = NULL) +
     ggplot2::theme(text = ggplot2::element_text(size=28),
-                   axis.text=ggplot2::element_text(size=28))
+                   axis.text=ggplot2::element_text(size=22),
+                   axis.text.x = ggplot2::element_text(angle = 45, hjust=1),
+                   axis.title = element_text(face = "bold"))
   
-  m1 + scale_y_continuous(
-    name = "mpg (US)", 
-    sec.axis = sec_axis(~ . * 1.20, name = "mpg (UK)")
-  )
-  
-  m1b <- ggplot2::ggplot(tempdat[["1"]][variable == "weight"]) +
-    ggplot2::geom_bar(ggplot2::aes(x = Nmoment, y = value), stat = 'identity') +
-    ggplot2::geom_point(ggplot2::aes(x = Nmoment, y = value), color = 'red') +
-    ggplot2::labs(y = labs1$y2, x = labs1$x) +
-    ggplot2::scale_y_reverse()
-  
+  m1 
   
   if (lang == "fr"){
-    labs2 <- list(x = "Classe d'âge en 2015",
-                  y = "Evolution sur trois ans\ndu patrimoine financier",
+    labs2 <- list(x = "Age",
+                  y = "Evolution sur trois ans\ndu patrimoine financier (2015-2018)",
                   labels = c("Simulée","Observée"),
+                  col = "Poids dans l'estimation",
                   y2 = 'Densité')  
   } else{
-    labs2 <- list(x = "Age group in 2015",
-                  y =  "3-year rolling growth rate",
+    labs2 <- list(x = "Age",
+                  y =  "Median Wealth growth rate between 2015 and 2018",
                   labels = c("Simulated","Observed"),
+                  col = "Weight in estimation",
                   y2 = "Density")  
   }
   
-  m2 <- ggplot2::ggplot(tempdat[["2"]][variable != "weight"], ggplot2::aes(x = Nmoment - 13,
+  m2 <- ggplot2::ggplot(tempdat[["2"]][variable != "weight"], ggplot2::aes(x = Nmoment,
                                                                            y = value,
                                                                            color = variable,
                                                                            shape = variable,
                                                                            group = variable)) +
     ggplot2::geom_line() +
     ggplot2::geom_point() +
+    geom_line(data = tempdat[["2"]][variable == "weight"],
+              aes(x = Nmoment, y = value, color = "weight", group = 1), linetype = "dashed") +
+    geom_point(data = tempdat[["2"]][variable == "weight"],
+               aes(x = Nmoment, y = value, color = "weight"), alpha = 0.4, linetype = "dashed") +
     ggplot2::geom_hline(yintercept = 0L) +
     ggplot2::labs(x = labs2$x,
                   y = labs2$y) +
     ggplot2::scale_color_manual(values = c('moment_simulations' = 'black',
-                                           'moment_data' = 'royalblue'),
-                                labels = labs2$labels) +
+                                           'moment_data' = 'royalblue',
+                                           "weight" = "red"),
+                                labels = c(labs2$labels, labs2$col)) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "bottom") +
     ggplot2::labs(y = labs2$y,
                   x = labs2$x, title = "") +
     ggplot2::scale_y_continuous(labels = scales::percent) +
+    ggplot2::theme(legend.title=ggplot2::element_blank()) +
     ggplot2::theme(text = ggplot2::element_text(size=28),
-                   axis.text=ggplot2::element_text(size=28)) +
-    ggplot2::theme(legend.title=ggplot2::element_blank())
+                   axis.text=ggplot2::element_text(size=22),
+                   axis.text.x = ggplot2::element_text(angle = 45, hjust=1),
+                   axis.title = element_text(face = "bold")) +
+    guides(shape="none")
   
   m2b <- ggplot2::ggplot(tempdat[["2"]][variable == "weight"]) +
     ggplot2::geom_bar(ggplot2::aes(x = Nmoment - 13, y = value), stat = 'identity') +
@@ -402,37 +417,26 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
     ggplot2::scale_y_reverse()
   
   return(
-    list(m1, m1b, m2, m2b)
+    list(m1, m2)
   )
   
 }
 
 plots <- plot_moment_age_wide(df_moment2)
-moment1 <- gridExtra::grid.arrange(plots[[1]], plots[[2]])
-moment2 <- gridExtra::grid.arrange(plots[[3]], plots[[4]])
+moment1 <- plots[[1]]
+moment2 <- plots[[2]]
 plots_eng <- plot_moment_age_wide(df_moment2, lang = "eng")
+moment1_eng <- plots_eng[[1]]
+moment2_eng <- plots_eng[[2]]
 
 ggplot2::ggsave(plot = moment1, "./output_ret_soc_v2/fig03_moment1.pdf",
                 width = 18, height = 20)
-ggplot2::ggsave(plot = plots[[1]], "./output_ret_soc_v2/fig03_moment1_part1.pdf",
-                width = 18, height = 20)
-ggplot2::ggsave(plot = plots[[2]], "./output_ret_soc_v2/fig03_moment1_part2.pdf",
-                width = 18, height = 20)
 ggplot2::ggsave(plot = moment2, "./output_ret_soc_v2/fig03_moment2.pdf",
                 width = 18, height = 20)
-ggplot2::ggsave(plot = plots[[3]], "./output_ret_soc_v2/fig03_moment2_part1.pdf",
+ggplot2::ggsave(plot = moment1_eng, "./output_ret_soc_v2/fig03_moment1_DT.pdf",
                 width = 18, height = 20)
-ggplot2::ggsave(plot = plots[[4]], "./output_ret_soc_v2/fig03_moment2_part2.pdf",
+ggplot2::ggsave(plot = moment2_eng, "./output_ret_soc_v2/fig03_moment2_DT.pdf",
                 width = 18, height = 20)
-
-ggplot2::ggsave(plot = plots_eng[[1]], "./output_ret_soc_v2/fig03_moment1_part1_DT.pdf",
-                width = 18, height = 10)
-ggplot2::ggsave(plot = plots_eng[[2]], "./output_ret_soc_v2/fig03_moment1_part2_DT.pdf",
-                width = 18, height = 10)
-ggplot2::ggsave(plot = plots_eng[[3]], "./output_ret_soc_v2/fig03_moment2_part1_DT.pdf",
-                width = 18, height = 10)
-ggplot2::ggsave(plot = plots_eng[[4]], "./output_ret_soc_v2/fig03_moment2_part2_DT.pdf",
-                width = 18, height = 10)
 
 
 # Figure 5: fit  ===============================
@@ -447,12 +451,10 @@ plot_fit_distribution <- function(EP_2018, simulations, lang = c('fr','eng')){
   
   lang <- match.arg(lang)
   
-  g1 <- ifelse(lang == "eng",
-               "Net wealth (wealth survey, individualized)",
-               "Richesse nette (enquête patrimoine, individualisée)")
   g2 <- ifelse(lang == "eng",
-               "Simulated wealth",
-               "Richesse nette simulée")
+               "Simulated","Simulée")
+  g1 <- ifelse(lang == "eng",
+               "Observed", "Observée")
   list_p <- c(seq(1,9.5, by = 0.5), 9.9)/10
   df <- data.table::data.table(
     g1 =
@@ -466,29 +468,28 @@ plot_fit_distribution <- function(EP_2018, simulations, lang = c('fr','eng')){
   df <- data.table::melt(df, id.vars = "q")
   
   
-  lang <- match.arg(lang)
   if (lang == "fr"){
     labs1 <- list(x = "Quantile de la distribution du patrimoine net",
                   y = "Patrimoine",
-                  labels = c("Observé (Patrimoine 2018)",
+                  labels = c("Observé",
                              "Simulé"))
   } else{
-    labs1 <- list(x = "Net wealth distribution quantile",
-                  y = "Wealth survey",
-                  labels = c("Observed (2018 Wealth survey)",
+    labs1 <- list(x = "Quantile of net wealth",
+                  y = "(arcinsh) Net wealth",
+                  labels = c("Observed",
                              "Simulated"))
   }
   
   p_fit <- ggplot(df) +
     # geom_line(aes(x = q, y = value, color = variable,
     #               size = grepl("simulé", variable))) +
-    geom_line(aes(x = q, y = asinh(value), color = variable,
-                  size = grepl("simulé", variable))) +
+    geom_line(aes(x = q, y = asinh(value), color = variable)) +
     geom_point(aes(x = q, y = asinh(value), color = variable)) +
     # geom_point(aes(x = q, y = value, color = variable)) +
     scale_size_manual(values = c(0.1, 2), 
                       labels = labs1$labels) +
     geom_hline(yintercept = 0) +
+    theme_bw() +
     theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
     guides(col = guide_legend(nrow = 2)) +
     labs(x = labs1$x,
@@ -496,19 +497,20 @@ plot_fit_distribution <- function(EP_2018, simulations, lang = c('fr','eng')){
          size = NULL,
          color = NULL) +
     theme(text = element_text(size=20),
-          axis.text=element_text(size=28))
+          axis.text=element_text(size=20),
+          axis.title = element_text(size = 28, face = "bold") )
   
   
   p_fit_level <- ggplot(df) +
     # geom_line(aes(x = q, y = value, color = variable,
     #               size = grepl("simulé", variable))) +
-    geom_line(aes(x = q, y = value, color = variable,
-                  size = grepl("simulé", variable))) +
+    geom_line(aes(x = q, y = value, color = variable)) +
     geom_point(aes(x = q, y = value, color = variable)) +
     # geom_point(aes(x = q, y = value, color = variable)) +
     scale_size_manual(values = c(0.1, 2), 
                       labels = labs1$labels) +
     geom_hline(yintercept = 0) +
+    theme_bw() +
     theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
     guides(col = guide_legend(nrow = 2)) +
     labs(x = labs1$x,
@@ -516,7 +518,8 @@ plot_fit_distribution <- function(EP_2018, simulations, lang = c('fr','eng')){
          size = NULL,
          color = NULL) +
     theme(text = element_text(size=20),
-          axis.text=element_text(size=28))
+          axis.text=element_text(size=20),
+          axis.title = element_text(size = 28, face = "bold") )
   # scale_y_continuous(trans = tn)
   
   return(list(p_fit, p_fit_level))
@@ -542,7 +545,7 @@ simul_copy <- data.table::copy(simulations)
 p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate") +
   theme_bw() + 
   theme(legend.position = "bottom") +
-  labs(x = "Year", y = "Fraction detained by top 10%",
+  labs(x = "Year", y = "Top 10% share",
        color = NULL) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   theme(axis.text=element_text(size=24),
@@ -556,7 +559,7 @@ simul_copy <- data.table::copy(simulations)
 p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate", threshold = 0.99) +
   theme_bw() + 
   theme(legend.position = "bottom") +
-  labs(x = "Year", y = "Fraction detained by top 1%",
+  labs(x = "Year", y = "Top 1% share",
        color = NULL) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   theme(axis.text=element_text(size=24),
