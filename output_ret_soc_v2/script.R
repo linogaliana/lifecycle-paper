@@ -142,8 +142,6 @@ ggplot2::ggsave(plot = p_french, filename = "./output_ret_soc_v2/fig01_inheritan
                 width = 13, height = 9)
 ggplot2::ggsave(plot = p_english, filename = "./output_ret_soc_v2/fig01_inheritance_predicted_DT.pdf",
                 width = 13, height = 9)
-ggplot2::ggsave(plot = p_english, filename = "./output_ret_soc_v2/fig01_inheritance_predicted_DT.png",
-                width = 13, height = 9)
 
 
 
@@ -374,7 +372,7 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
                   y2 = 'Densité')  
   } else{
     labs2 <- list(x = "Age",
-                  y =  "Median Wealth growth rate between 2015 and 2018",
+                  y =  "Median Wealth growth rate \nbetween 2015 and 2018",
                   labels = c("Simulated","Observed"),
                   col = "Weight in estimation",
                   y2 = "Density")  
@@ -553,7 +551,7 @@ p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate") +
         legend.text=element_text(size=24)) +
   scale_color_manual(labels = c("Labor income","Total income",'Wealth'),
                      values = c("#F8766D", "#00BA38", "#619CFF"))
-ggsave(plot = p3, sprintf("./output_ret_soc_v2/top10.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3, sprintf("./output_ret_soc_v2/top10_DT.pdf", dir), width = 12, height = 8)
 
 simul_copy <- data.table::copy(simulations)
 p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate", threshold = 0.99) +
@@ -568,7 +566,7 @@ p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate", thr
   scale_color_manual(labels = c("Labor income","Total income",'Wealth'),
                      values = c("#F8766D", "#00BA38", "#619CFF"))    
 
-ggsave(plot = p3, sprintf("./output_ret_soc_v2/top1.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3, sprintf("./output_ret_soc_v2/top1_DT.pdf", dir), width = 12, height = 8)
 
 
 p2 <- capitulation::plot_gini(simul_copy,
@@ -579,7 +577,7 @@ p2 <- capitulation::plot_gini(simul_copy,
   theme(axis.text=element_text(size=24),
         axis.title=element_text(size=24,face="bold"),
         legend.text=element_text(size=24))
-ggsave(plot = p2, sprintf("./output_ret_soc_v2/gini_evolution_noneg.pdf", dir), width = 12, height = 8)
+ggsave(plot = p2, sprintf("./output_ret_soc_v2/gini_evolution_noneg_DT.pdf", dir), width = 12, height = 8)
 
 
 
