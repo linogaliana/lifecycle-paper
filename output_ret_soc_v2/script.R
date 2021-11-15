@@ -2,7 +2,7 @@ library(tablelight)
 library(data.table)
 library(ggplot2) 
 
-source("functions.R")
+source("functions.R", encoding = "UTF-8")
 
 
 # MODELE HERITAGE ------------------------------------
@@ -21,7 +21,7 @@ bounds <- c(3,8,15,30,60,100,150,200,250)*1000
 lbounds <- log(bounds)
 
 
-estim_data <-data.table::copy(inheritance_data)#[get('income')>0]
+estim_data <- data.table::copy(inheritance_data)#[get('income')>0]
 
 estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
 estim_data[,'age' := get('AGE')]
@@ -105,16 +105,20 @@ plot_confusion <- function(langage = c('fr','eng')){
   labs_x <- c(ifelse(langage == "eng", "No inheritance","Pas d'héritage"),
               REtage:::get_labs(lbounds)
   )
+  if (langage == "fr"){
+    labs_x <- gsub("Less than", "Moins de",labs_x)
+    labs_x <- gsub("More than", "Plus de",labs_x)
+  }
   ylab <- ifelse(langage == "eng", 'Number of individuals', "Nombre d'individus")
-  xlab <- ifelse(langage == "eng", "Inherited amount, by survey thresholds",
-                 "Valeur héritée, en tranches")
+  xlab <- ifelse(langage == "eng", "Inherited amount in euros",
+                 "Valeur héritée (en euros)")
   labels_legend <- if(langage == "eng") c("Observed","Predicted") else c("Observée", "Simulée")
-
+  
   p <- ggplot(confusion) +
     geom_histogram(aes(x = factor(value),fill = variable),
                    stat = "count", alpha=0.6, position = 'dodge') +
     scale_x_discrete(labels= labs_x) +
-    theme(legend.title=element_blank(), legend.position = "top",
+    theme(legend.title=element_blank(), legend.position = "bottom",
           axis.text.x = element_text(angle = 45, hjust=1)) +
     labs(x = NULL, y = ylab)
   
@@ -128,7 +132,7 @@ plot_confusion <- function(langage = c('fr','eng')){
     theme(text = element_text(size=20),
           axis.text=element_text(size=20),
           axis.title = element_text(size = 28, face="bold"))
-
+  
   return(p)
 }
 
@@ -142,6 +146,7 @@ ggplot2::ggsave(plot = p_french, filename = "./output_ret_soc_v2/fig01_inheritan
                 width = 13, height = 9)
 ggplot2::ggsave(plot = p_english, filename = "./output_ret_soc_v2/fig01_inheritance_predicted_DT.pdf",
                 width = 13, height = 9)
+data.table::fwrite(p_french$data[, .N, by = c('variable','value')], file = "./output_ret_soc_v2/fig01_data.csv")
 
 
 
@@ -210,7 +215,7 @@ simulations <- capitulation::life_cycle_model(
   additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq"))
 
 simulations <- simulations[age > findet]
-simulations[,'sexe' := "SEXE"]
+simulations[,'sexe' := get("SEXE")]
 
 clean_data2(simulations)
 
@@ -235,17 +240,18 @@ EP_lon[, c('SEXE') := data.table::fifelse(get('SEXE')==1,
 # K(AGE) ET rK(AGE) -----------------------------
 
 kage_fr <- plot_K_age2(simulations,EP_2015, method = "median", has_ricardian = FALSE,
-                        trans = "div_1000", trans_survey = "div_1000",
-                        lang = "fr")
+                       trans = "div_1000", trans_survey = "div_1000",
+                       lang = "fr")
 
 kage_eng <- plot_K_age2(simulations,EP_2015, method = "median", has_ricardian = FALSE,
-                    trans = "div_1000", trans_survey = "div_1000")
-
+                        trans = "div_1000", trans_survey = "div_1000")
 
 ggplot2::ggsave(plot = kage_fr, filename = "./output_ret_soc_v2/fig01_kage2.pdf",
                 width = 13, height = 9)
 ggplot2::ggsave(plot = kage_fr, filename = "./output_ret_soc_v2/fig01_kage2.png",
                 width = 13, height = 9)
+data.table::fwrite(kage_fr$data[,.SD,.SDcols = c('annee','age','predict','source')],
+                   "./output_ret_soc_v2/fig01_data.csv")
 
 ggplot2::ggsave(plot = kage_eng, filename = "./output_ret_soc_v2/fig01_kage2_DT.pdf",
                 width = 13, height = 9)
@@ -257,8 +263,8 @@ rkage <- plot_K_age2(simulations,EP_2015, method = "median", has_ricardian = FAL
                      lang = "eng") +
   ggplot2::scale_y_continuous(labels = scales::percent)
 rkage_fr <- plot_K_age2(simulations,EP_2015, method = "median", has_ricardian = FALSE,
-                     wealth_var = "rKY", wealth_var_survey = "rKY",
-                     lang = "fr") +
+                        wealth_var = "rKY", wealth_var_survey = "rKY",
+                        lang = "fr") +
   ggplot2::scale_y_continuous(labels = scales::percent)
 
 
@@ -270,6 +276,8 @@ ggplot2::ggsave(plot = rkage_fr, filename = "./output_ret_soc_v2/fig01b_rkage.pd
                 width = 13, height = 9)
 ggplot2::ggsave(plot = rkage_fr, filename = "./output_ret_soc_v2/fig01b_rkage.png",
                 width = 13, height = 9)
+data.table::fwrite(rkage_fr$data[,.SD,.SDcols = c('annee','age','predict','source')],
+                   "./output_ret_soc_v2/fig01b_data.csv")
 
 
 # PLOT DES MOMENTS -----------------------------------
@@ -314,10 +322,10 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
   tempdat <- data.table::copy(df_moment2)
   tempdat[,'Nmoment' := data.table::fifelse(
     cumsum(weight) <= 1, paste0(as.character(20+(Nmoment-1)*5),"-",
-                                                   as.character(20+Nmoment*5)),
+                                as.character(20+Nmoment*5)),
     paste0(as.character(30+(Nmoment-14)*5),"-",
            as.character(30+(Nmoment-13)*5))
-    )]
+  )]
   tempdat[, 'cumsum' := cumsum(weight)]
   tempdat[, 'moment' := 1 + as.numeric(cumsum>1)]
   tempdat[, c("cumsum") := NULL]
@@ -327,15 +335,15 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
   
   if (lang == "fr"){
     labs1 <- list(x = "Age",
-                  y = "Patrimoine médian \n(arcsinh)",
+                  y = "Arcsinh(patrimoine médian)",
                   labels = c("Simulée","Observée"),
-                  col = "Poids dans l'estimation",
+                  col = "Poids dans l'estimation (densité)",
                   y2 = 'Densité')
   } else{
     labs1 <- list(x = "Age",
-                  y = "Median wealth \n(arcsinh)",
+                  y = "arcsinh(Median wealth)",
                   labels = c("Simulated","Observed"),
-                  col = "Weight in estimation",
+                  col = "Weight in estimation (density)",
                   y2 = "Density")  
   }
   
@@ -346,7 +354,7 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
     geom_line(data = tempdat[["1"]][variable == "weight"],
               aes(x = Nmoment, y = 100*value, color = labs1$col, group = 1)) +
     geom_point(data = tempdat[["1"]][variable == "weight"],
-              aes(x = Nmoment, y = 100*value, color = labs1$col)) +
+               aes(x = Nmoment, y = 100*value, color = labs1$col)) +
     ggplot2::labs(x = labs1$x, y = labs1$y) +
     ggplot2::scale_fill_manual(values = c('moment_simulations' = "#69b3a2",
                                           'moment_data' = "#404080"),
@@ -354,7 +362,7 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
     ggplot2::scale_color_manual('', values = "red", breaks = labs1$col) +
     ggplot2::guides(fill = ggplot2::guide_legend(reverse=TRUE)) +
     ggplot2::theme_bw() +
-    ggplot2::theme(legend.position = "top") +
+    ggplot2::theme(legend.position = "bottom") +
     ggplot2::labs(y = labs1$y,
                   fill = NULL) +
     ggplot2::theme(text = ggplot2::element_text(size=28),
@@ -366,7 +374,7 @@ plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")
   
   if (lang == "fr"){
     labs2 <- list(x = "Age",
-                  y = "Evolution sur trois ans\ndu patrimoine financier (2015-2018)",
+                  y = "Evolution sur trois ans\ndu patrimoine (2015-2018)",
                   labels = c("Simulée","Observée"),
                   col = "Poids dans l'estimation",
                   y2 = 'Densité')  
@@ -431,10 +439,16 @@ ggplot2::ggsave(plot = moment1, "./output_ret_soc_v2/fig03_moment1.pdf",
                 width = 18, height = 20)
 ggplot2::ggsave(plot = moment2, "./output_ret_soc_v2/fig03_moment2.pdf",
                 width = 18, height = 20)
+ggplot2::ggsave(plot = moment1, "./output_ret_soc_v2/fig03_moment1.png",
+                width = 18, height = 20)
+ggplot2::ggsave(plot = moment2, "./output_ret_soc_v2/fig03_moment2.png",
+                width = 18, height = 20)
 ggplot2::ggsave(plot = moment1_eng, "./output_ret_soc_v2/fig03_moment1_DT.pdf",
                 width = 18, height = 20)
 ggplot2::ggsave(plot = moment2_eng, "./output_ret_soc_v2/fig03_moment2_DT.pdf",
                 width = 18, height = 20)
+data.table::fwrite(plots[[1]]$data, "./output_ret_soc_v2/fig03_moment1.csv")
+data.table::fwrite(plots[[2]]$data, "./output_ret_soc_v2/fig03_moment2.csv")
 
 
 # Figure 5: fit  ===============================
@@ -468,12 +482,12 @@ plot_fit_distribution <- function(EP_2018, simulations, lang = c('fr','eng')){
   
   if (lang == "fr"){
     labs1 <- list(x = "Quantile de la distribution du patrimoine net",
-                  y = "Patrimoine",
+                  y = "Arcsinh(patrimoine)",
                   labels = c("Observé",
                              "Simulé"))
   } else{
     labs1 <- list(x = "Quantile of net wealth",
-                  y = "(arcinsh) Net wealth",
+                  y = "arcinsh(Net wealth)",
                   labels = c("Observed",
                              "Simulated"))
   }
@@ -489,7 +503,7 @@ plot_fit_distribution <- function(EP_2018, simulations, lang = c('fr','eng')){
     geom_hline(yintercept = 0) +
     theme_bw() +
     theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
-    guides(col = guide_legend(nrow = 2)) +
+    guides(col = guide_legend(nrow = 1)) +
     labs(x = labs1$x,
          y = labs1$y,
          size = NULL,
@@ -528,9 +542,11 @@ p_fit2 <- plot_fit_distribution(EP_2018, simulations, "eng")
 
 ggplot2::ggsave(plot = p_fit1[[1]], "./output_ret_soc_v2/fig05_fit.png",
                 width = 12, height = 8)
+ggplot2::ggsave(plot = p_fit1[[1]], "./output_ret_soc_v2/fig05_fit.pdf",
+                width = 12, height = 8)
 ggplot2::ggsave(plot = p_fit1[[2]], "./output_ret_soc_v2/fig05_fit_level.png",
                 width = 12, height = 8)
-data.table::fwrite(p_fit$data, file = "./output_ret_soc_v2/fig05_data.csv")
+data.table::fwrite(p_fit1[[1]]$data, file = "./output_ret_soc_v2/fig05_data.csv")
 ggplot2::ggsave(plot = p_fit2[[1]], "./output_ret_soc_v2/fig05_fit_DT.pdf",
                 width = 16, height = 8)
 ggplot2::ggsave(plot = p_fit2[[2]], "./output_ret_soc_v2/fig05_fit_level_DT.pdf",
@@ -540,44 +556,112 @@ ggplot2::ggsave(plot = p_fit2[[2]], "./output_ret_soc_v2/fig05_fit_level_DT.pdf"
 # top income shares --------------------------
 
 simul_copy <- data.table::copy(simulations)
-p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate") +
-  theme_bw() + 
-  theme(legend.position = "bottom") +
-  labs(x = "Year", y = "Top 10% share",
-       color = NULL) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  theme(axis.text=element_text(size=24),
-        axis.title=element_text(size=24,face="bold"),
-        legend.text=element_text(size=24)) +
-  scale_color_manual(labels = c("Labor income","Total income",'Wealth'),
-                     values = c("#F8766D", "#00BA38", "#619CFF"))
+
+plot_top_shares2 <- function(simul_copy, threshold = 0.99, lang = c("eng","fr")){
+  
+  lang <- match.arg(lang)
+  
+  if (lang == "fr"){
+    lab <- list(x = "Année", y = sprintf("Part du top %s%%", 100*(1 - threshold)),
+                labels = c("Revenus du travail","Revenu total",'Patrimoine net')
+    )
+  } else{
+    lab <- list(x = "Year", y = sprintf("Top %s%% share", 100*(1 - threshold)),
+                labels = c("Labor income","Total income",'Wealth')
+    )
+    
+  }
+  
+  cols <- setNames(c('darkgreen', 'royalblue3', 'hotpink4'),
+                   c(sprintf("top%s labor income", 100*(1 - threshold)),
+                     sprintf("top%s total income", 100*(1 - threshold)),
+                     sprintf("top%s wealth", 100*(1 - threshold)))
+  )
+  
+  
+  p3 <- capitulation::plot_top_share(simul_copy, threshold = threshold, 
+                                     negative_values = "truncate") +
+    theme_bw() + 
+    theme(legend.position = "bottom") +
+    labs(x = lab$x, y = lab$y,
+         color = NULL) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    theme(axis.text=element_text(size=24),
+          axis.title=element_text(size=24,face="bold"),
+          legend.text=element_text(size=24)) +
+    scale_colour_manual(
+      # palette = "Set1",
+      values = cols,
+      labels = lab$labels
+    )
+  
+  return(p3)
+  
+}
+
+p3 <- plot_top_shares2(simul_copy, threshold = 0.9, lang = "eng")
+p3_fr <- plot_top_shares2(simul_copy, threshold = 0.9, lang = "fr")
 ggsave(plot = p3, sprintf("./output_ret_soc_v2/top10_DT.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3_fr, sprintf("./output_ret_soc_v2/top10.png", dir), width = 12, height = 8)
+ggsave(plot = p3_fr, sprintf("./output_ret_soc_v2/top10.pdf", dir), width = 12, height = 8)
+data.table::fwrite(p3$data, "./output_ret_soc_v2/top10.csv")
+
 
 simul_copy <- data.table::copy(simulations)
-p3 <- capitulation::plot_top_share(simul_copy, negative_values = "truncate", threshold = 0.99) +
-  theme_bw() + 
-  theme(legend.position = "bottom") +
-  labs(x = "Year", y = "Top 1% share",
-       color = NULL) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  theme(axis.text=element_text(size=24),
-        axis.title=element_text(size=24,face="bold"),
-        legend.text=element_text(size=24)) +
-  scale_color_manual(labels = c("Labor income","Total income",'Wealth'),
-                     values = c("#F8766D", "#00BA38", "#619CFF"))    
+p3 <- plot_top_shares2(simul_copy, threshold = 0.99, lang = "eng")
+p3_fr <- plot_top_shares2(simul_copy, threshold = 0.99, lang = "fr")
 
 ggsave(plot = p3, sprintf("./output_ret_soc_v2/top1_DT.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3_fr, sprintf("./output_ret_soc_v2/top1.png", dir), width = 12, height = 8)
+ggsave(plot = p3_fr, sprintf("./output_ret_soc_v2/top1.pdf", dir), width = 12, height = 8)
+data.table::fwrite(p3$data, "./output_ret_soc_v2/top1.csv")
 
+plot_gini2 <- function(simul_copy, lang = c("English","French")){
+  
+  lang <- match.arg(lang)
+  
+  if (lang == "French"){
+    lab <- list(x = "Année", y = "Indice de Gini",
+                labels = c("Revenus du travail","Revenu total", 'Patrimoine net')
+    )
+  } else{
+    lab <- list(x = "Year", y = "Gini index",
+                labels = c("Labor income","Total income", 'Wealth')
+    )
+    
+  }
+  
+  cols <- setNames(c('darkgreen', 'royalblue3', 'hotpink4'),
+                   c("revenu", "Y", "wealth")
+  )
+  
+  p3 <- capitulation::plot_gini(simul_copy,
+                                langage = "English",
+                                labels = c("revenu", "Y", "wealth"),
+                                vars = c("revenu", "Y", "wealth"),
+                                negative_values = "truncate") +
+    theme(axis.text=element_text(size=24),
+          axis.title=element_text(size=24,face="bold"),
+          legend.text=element_text(size=24)) +
+    labs(y = lab$y, x = lab$x) +
+    scale_colour_manual(
+      # palette = "Set1",
+      values = cols,
+      labels = lab$labels
+    )
+  
+  p3
+  
+  return(p3)
+  
+}
 
-p2 <- capitulation::plot_gini(simul_copy,
-                              langage = "English",
-                              labels = c("Labor income", "Net wealth", "Total income"),
-                              vars = c("revenu", "wealth", "Y"),
-                              negative_values = "truncate") +
-  theme(axis.text=element_text(size=24),
-        axis.title=element_text(size=24,face="bold"),
-        legend.text=element_text(size=24))
+p2 <- plot_gini2(simul_copy)
+p2_fr <- plot_gini2(simul_copy, "French")
 ggsave(plot = p2, sprintf("./output_ret_soc_v2/gini_evolution_noneg_DT.pdf", dir), width = 12, height = 8)
+ggsave(plot = p2_fr, sprintf("./output_ret_soc_v2/gini_evolution_noneg.png", dir), width = 12, height = 8)
+ggsave(plot = p2_fr, sprintf("./output_ret_soc_v2/gini_evolution_noneg.pdf", dir), width = 12, height = 8)
+data.table::fwrite(p2$data, "./output_ret_soc_v2/gini.csv")
 
 
 
@@ -636,9 +720,9 @@ cat(
     list(probit, inheritance_model), type = "latex",
     title = "Heritage: models for outcome and selection",
     label = "tab:heritage",
-    dep.var.labels = c("Amount inherited (log)", "Probability to get a bequest"),
+    dep.var.labels = c("Inheritance probability", "Amount inherited (log)"),
     dep.var.separate = 1,
-    column.labels = c("(\\textsc{Outcome})", "(\\textsc{Selection})"),
+    column.labels = c("(\\textsc{Selection})", "(\\textsc{Outcome})"),
     # omit = names(probit$coefficients)[startsWith("factor(tr_ag", x = names(probit$coefficients))],
     covariate.labels = c(
       c(sprintf("Age between %s and %s",
@@ -656,7 +740,8 @@ cat(
       "$\\log(\\sigma)$"
     ),
     stats.add = c("Controls for age & Yes & Yes",
-                  "Controls for graduation age & Yes & Yes"),
+                  "Controls for graduation age & Yes & Yes",
+                  "Model & Probit & Interval regression"),
     add.lines = c(
       "Model estimated by interval regression (ordered probit regression with known thresholds) using declared received bequests in \\textit{Enquête Patrimoine 2015}",
       "Only the subset of individuals whom both parents are deceased is included in the sample"
@@ -672,7 +757,7 @@ inheritance_distrib <- menages_structural2[, .SD[1], by = "Id"]
 
 tablelight:::summary_(
   inheritance_distrib[inheritance_distrib$H_given != 0], xvar = "hg",
-  stats = c("1Q", 'median',"mean",'3Q','P90')
+  stats = c("1Q", 'median',"mean",'3Q','P90', 'N')
 )
 
 

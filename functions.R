@@ -359,35 +359,66 @@ plot_K_age2 <- function(simulations, observed_data,
   
   if (wealth_var == "wealth"){
     ylab <- ifelse(lang == "eng", 
-                   "Simulated wealth \n(thousand euros)",
-                   "Richesse simulée \n(en milliers d'euros)")
+                   "Simulated wealth \n(thousands euros)",
+                   "Patrimoine simulé \n(en milliers d'euros)")
   } else{
     ylab <- ifelse(lang == "eng", 
                    "Simulated capital income \n(% total income)",
-                   "Revenus du capital simulés \n(% total income)")
+                   "Revenus du capital simulés \n(% du revenu total)")
   }
   if (lang == "eng"){
     labelsource <- c("Simulated", 'Observed (wealth survey 2015)')
+    labelcurve <- "Wealth survey 2015"
+    labelcurve2 <- "Simulation in 2015"
   } else{
     labelsource <-  c("Simulée", "Observée (patrimoine 2015)")
+    labelcurve <- "Enquête patrimoine 2015"
+    labelcurve2 <- "Simulation en 2015"
   }
   
-  p <- ggplot(dataframes[age %between% c(30,75)],
-              aes(x = age, y = wealth, color = factor(annee),
-                  linetype = factor(source == "survey"))) + 
-    geom_smooth(se = FALSE)
-  p <- p + scale_color_viridis_d()
+  temp <- ggplot(dataframes[age %between% c(30,75) & source == "survey"], aes(x = age, y = wealth)) +
+    geom_smooth(color = "red", linetype = "dashed",
+                se = FALSE)
+  temp2 <- ggplot(dataframes[age %between% c(30,75) & source != "survey"], aes(x = age, y = wealth)) +
+    geom_smooth(color = "red", linetype = "dashed",
+                se = FALSE)
+  
+  blues_fun <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(32,"RdYlGn"))
+  
+  p <- ggplot(dataframes[age %between% c(30,75) & source != "survey"],
+              aes(x = age, y = wealth, color = factor(annee))) +
+    geom_smooth(se = FALSE) 
+  
+  p <- p + scale_color_manual(values = blues_fun(32)) +
+    geom_smooth(data = dataframes[age %between% c(30,75) & source == "survey"], aes(x = age, y = wealth), color = "black", linetype = "dashed",
+                se = FALSE)
+  
+
+  p <- p + annotate("segment", x = 60, xend = 55,
+                y = temp$data[age == 55]$predict - (max(temp$data$predict) - min(temp$data$predict))/2,
+                yend = temp$data[age == 55]$predict,
+             colour = "black", size = 1, arrow = arrow(length = unit(2, "mm"))) +
+     annotate(geom = "text", x = 56, y = temp$data[age == 55]$predict - (max(temp$data$predict) - min(temp$data$predict))/1.9,
+              label = labelcurve, hjust = "left", color = "black", size = 5)
+
+  p <- p + annotate("segment", x = 60, xend = 55,
+                    y = temp2$data[age == 55 & annee == 2015]$predict + (max(temp2$data[annee == 2015]$predict) - min(temp2$data[annee == 2015]$predict))/2,
+                    yend = temp2$data[age == 55 & annee == 2015]$predict,
+                    colour = "black", size = 1, arrow = arrow(length = unit(2, "mm"))) +
+    annotate(geom = "text", x = 56, y = temp2$data[age == 55 & annee == 2015]$predict + (max(temp2$data[annee == 2015]$predict) - min(temp2$data[annee == 2015]$predict))/1.9,
+             label = labelcurve2, hjust = "left", color = "black", size = 5)
+  
   
   p <- p + ggplot2::labs(y = ylab, x = "Age") +
     theme_bw() +
     theme(text = element_text(size=20),
           axis.text=element_text(size=22),
           axis.title=element_text(size=28,face="bold")) +
-    ggplot2::scale_linetype_manual(breaks = c(FALSE,TRUE),
-                                   values=c("solid", "dashed"),
-                                   labels = labelsource)  +
-    guides(color = "none", linetype = guide_legend(title="Source")) +
-    theme(legend.position="top")
+    # ggplot2::scale_linetype_manual(breaks = c(FALSE,TRUE),
+    #                                values=c("solid", "dashed"),
+    #                                labels = labelsource)  +
+    guides(color = "none", linetype = guide_legend(title="")) +
+    theme(legend.position="bottom")
   
   return(p)
 }
