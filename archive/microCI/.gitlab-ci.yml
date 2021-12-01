@@ -1,0 +1,27 @@
+build:
+  stage: build
+  tags: 
+    - maven
+  script:
+    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker push "$CI_REGISTRY_IMAGE"
+
+
+buildD2E:
+  stage: build
+  tags: 
+    - maven
+  script:
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:seminaireD2E" . -f DockerfileD2E
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker push "$CI_REGISTRY_IMAGE"
+
+builddev:
+ stage: build
+ tags: 
+   - maven
+ script:
+   - docker build --pull -t "$CI_REGISTRY_IMAGE:dev" . -f "Dockerfile_dev"
+   - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+   - docker push "$CI_REGISTRY_IMAGE"

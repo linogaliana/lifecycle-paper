@@ -250,13 +250,13 @@ simulations <- capitulation::life_cycle_model(
   r = r,
   beta = beta,
   gamma = gamma,
-  non_ricardian = TRUE,
+  non_ricardian = FALSE,
+  scale_model = "log",
   observation_year = 2009,
   income_var = "revenu",
   Hgiven_var = "H_given",
   Hreceived_var = "H_received",
   non_ricardian_var = "non_ricardian",
-  scale_model = "level",
   return_last = FALSE,
   get_capital_income = TRUE,
   additional_vars = c("tr_age","SEXE","tr_agfinetu","findet", "non_ricardian"))
@@ -333,6 +333,8 @@ EP_lon[, c('SEXE') := data.table::fifelse(get('SEXE')==1,
 plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
                         weight_observed_data = "POND",
                         wealth_var = "wealth",
+                        trans = NULL,
+                        trans_survey = NULL,
                         wealth_var_survey = 'PATRI_NET',
                         year_var = "annee",
                         age_var = "age",
@@ -346,8 +348,31 @@ plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
   
   simulations2 <- simulations[get(year_var) %between% c(start_year,final_year)]
   simulations2 <- simulations2[get(age_var)>get(graduation_var)]
+  observed_data2 <- data.table::copy(observed_data)
   
   if (has_ricardian) simulations2 <- simulations2[!(non_ricardian)]
+  
+  if (!is.null(trans)){
+    
+    if (trans == "log"){
+      simulations2[,'wealth' := log(wealth)]
+    }
+    if (trans == "exp"){
+      simulations2[,'wealth' := exp(wealth)]
+    }
+  }  
+  
+  if (!is.null(trans_survey)){
+    
+    observed_data2 <- observed_data2[get(wealth_var_survey)>0]
+    
+    if (trans_survey == "log"){
+      observed_data2[,c(wealth_var_survey) := log(get(wealth_var_survey))]
+    }
+    if (trans_survey == "exp"){
+      observed_data2[,c(wealth_var_survey) := exp(get(wealth_var_survey))]
+    }
+  }  
   
   if (method != "smooth"){
   simulations2 <- simulations2[, .("wealth" = median(get(wealth_var), na.rm = TRUE)),
@@ -356,10 +381,10 @@ plot_K_age2 <- function(simulations, observed_data, has_ricardian = FALSE,
   }
   
   if (is.null(weight_observed_data)){
-    observed_data2 <- observed_data[,.("wealth" =  median(get(wealth_var_survey), na.rm = TRUE)),
+    observed_data2 <- observed_data2[,.("wealth" =  median(get(wealth_var_survey), na.rm = TRUE)),
                                     by = age_var_survey]
   } else{
-    observed_data2 <- observed_data[,.("wealth" =  Hmisc::wtd.quantile(get(wealth_var_survey), weights = get(weight_observed_data),
+    observed_data2 <- observed_data2[,.("wealth" =  Hmisc::wtd.quantile(get(wealth_var_survey), weights = get(weight_observed_data),
                                                                        na.rm = TRUE, probs = .5)),
                                     by = age_var_survey]
   }
@@ -390,8 +415,9 @@ library(ggplot2)
 
 capitulation::plot_K_age(simulations[age>findet], xlims = c(30,75),
                          method = "median")
-kage1 = plot_K_age2(simulations2[age>findet],EP_2015, method = "median", has_ricardian = TRUE)
-kage2 = plot_K_age2(simulations2[age>findet],EP_2015, method = "median", has_ricardian = FALSE)
+kage1 = plot_K_age2(simulations2[age>findet],EP_2015, method = "median", has_ricardian = TRUE, trans_survey = "log")
+kage2 = plot_K_age2(simulations2[age>findet],EP_2015, method = "median", has_ricardian = FALSE, trans = "exp")
+
 
 # NOUVELLE ESTIMATION ------
 
@@ -400,7 +426,7 @@ simulations2 <- capitulation::life_cycle_model(
   population,
   wealthvar_survey = "K_observed",
   r = r,
-  beta = 1.040049,
+  beta = 1.158024,
   gamma = gamma,
   non_ricardian = TRUE,
   observation_year = 2009,
@@ -470,7 +496,7 @@ ggplot2::ggsave(plot = kage2, filename = "./output_ret_soc_v2/fig01_kage2.pdf",
 library(ggplot2)
 library(data.table)
 
-xx <- simulations[,mean(wealth == 0), by = c('annee','age')]
+xx <- simulations[,mean(wealth <= 0), by = c('annee','age')]
 ggplot(xx[annee %between% c(2015,2035)]) + geom_smooth(aes(x = age, y = as.numeric(V1), color = factor(annee)), se = FALSE) +
   xlim(35,75)
 
@@ -521,20 +547,20 @@ df_moment2 <- wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018
                                 observed_moment_data = NULL,
                                 r = r,
                                 gamma = gamma,
-                                beta = 1.040049,
+                                beta = 1.158024,
                                 r.parameters = NULL,
                                 gamma.parameters = NULL,
                                 beta.parameters = NULL,
                                 r_low = r,
                                 r_high = r,
-                                non_ricardian = TRUE,
-                                non_ricardian_var = "non_ricardian",
+                                # non_ricardian = TRUE,
+                                # non_ricardian_var = "non_ricardian",
                                 N_moments = 180,
                                 wealth_var = "PATRI_NET",
                                 age_var_simulations = "age",
                                 normalize = FALSE,
-                                scale_model = "level",
-                                scale_variable_moment1 = "log",
+                                scale_model = "log",
+                                scale_variable_moment1 = "asinh",
                                 scale_variable_moment2 = "log",
                                 scale_moment1 = "level",                               
                                 moment1 = "level",
@@ -545,7 +571,6 @@ df_moment2 <- wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018
                                 Hreceived_var = "hr",
                                 additional_vars = c("tr_age","SEXE","tr_agfinetu","findet", "non_ricardian"),
                                 by = c("tr_age_2015", "tr_age_2015"))
-
 
 
 plot_moment_age_wide <-function(df_moment2, ages = c(30,65)){

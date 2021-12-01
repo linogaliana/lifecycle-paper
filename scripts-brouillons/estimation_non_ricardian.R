@@ -45,14 +45,14 @@ estim_data[, inherited := (MTHER != 0) ]
 estim_data$inherited <- factor(as.numeric(estim_data$inherited))
 estim_data <- estim_data[order(MTHER)]
 
-estim_data <- na.omit(estim_data, cols = c("inherited","tr_age","tr_agfinetu","SEXE", "lw", "MTHER"))
+estim_data <- na.omit(estim_data, cols = c("inherited","tr_age","AGE","tr_agfinetu","SEXE", "lw", "MTHER"))
 
 
 
 # SELECTION MODEL -----------------
 
 
-probit <- glm(inherited ~ factor(tr_age) + factor(tr_agfinetu),
+probit <- glm(inherited ~ AGE + I((AGE^2)/100) + factor(tr_agfinetu),
               family = binomial(link = "probit"), 
               data = estim_data)
 summary(probit)
@@ -75,7 +75,7 @@ table(confusion_first_step)
 inheritance_model <-  oglm::oglmx(
   data = data.frame(estim_data[MTHER>0]),
   link = "probit",
-  formulaMEAN = "MTHER ~ factor(SEXE) + lw",
+  formulaMEAN = "MTHER ~ factor(SEXE) + lw + AGE + I((AGE^2)/100) + factor(tr_agfinetu)",
   constantSD = TRUE,
   threshparam = lbounds
 )
