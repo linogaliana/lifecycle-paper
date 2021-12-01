@@ -1,0 +1,15 @@
+FROM git-registry.stable.innovation.insee.eu/innovation/rstudio
+MAINTAINER Lino Galiana <lino.galiana@insee.fr>
+
+
+RUN \
+    R -e "install.packages('RcppEigen');" \
+    && R -e " \
+    devtools::install_git('https://git.stable.innovation.insee.eu/microsimulation/retage', ref = 'seminaireD2E', upgrade = 'never')  ; \
+    devtools::install_git('https://git.stable.innovation.insee.eu/microsimulation/capitulation', ref = 'seminaireD2E', upgrade = 'never')  ; \
+    devtools::install_git('https://git.stable.innovation.insee.eu/microsimulation/wealthyr', ref = 'seminaireD2E', upgrade = 'never')  ; \
+    devtools::install_github('linogaliana/tablelight', upgrade = 'never') ; \
+    " 
+
+
+VOLUME ["/home"]
