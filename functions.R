@@ -580,3 +580,129 @@ share_total <- function(simulations, yvar = "wealth", jitterize = FALSE){
   )
 }
 
+
+recompute_uc <- function(table){
+
+table=simul$macro%>%select(annee,Prix,PlafondSS,SMIC,PointFP,SMPT,PIB,RevaloSPC,RevaloRG,RevaloFP,MinVieil1,MinVieil2,
+                           Mincont1,Mincont2,SalValid)%>%
+  mutate(Mincont2/lag(Mincont2)-1)
+
+
+##################
+#calcul du niveau de vie des retraités
+#################
+emploi=simul$emp%>%
+  select(age,Id, statut)%>%
+  left_join(simul$salairenet)
+
+emploi=emploi%>%mutate(salaire=salaires_net)%>%
+  select(-salaires_net)
+
+
+
+test=select(filter(emploi,statut!=0),Id,age,salaire)%>% # Note : statut != 0 -> l'individu est encore présent
+  rename(salaire_Id=salaire)%>%
+  left_join((simul$ech)[,c('Id','anaiss')])%>%
+  left_join(simul$fam%>%
+              group_by(Id)%>%
+              mutate(firstf=annee==first(annee),prem_obs=first(annee))%>%
+              filter(firstf==T)%>%
+              select(Id,prem_obs))%>%  # on ne garde que les les observations à partir de la première observation dans fam
+  mutate(annee=age+anaiss)%>%
+  filter(annee>=prem_obs)%>%
+  select(-prem_obs,-anaiss)%>%
+  left_join(simul$fam)%>%
+  rename(matri_Id=matri)%>%
+  mutate(conjoint=ifelse(matri_Id==3,0,conjoint)) #pour les veufs je met le conjoint à 0
+
+test=test%>%  
+  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf1"="Id"))%>% # on verifie ensuite pour chaque enfant s'il est à charge ou non c'est à dire s'il a moins de 21 ans
+  mutate(ageenf1=annee-anaiss,enf1=ifelse((annee-anaiss)%in%seq(0,21),enf1,0))%>% # et s'il n'a pas de revnu du travail
+  left_join(select(emploi,-statut),by=c("enf1"="Id","ageenf1"="age"))%>%
+  mutate(enf1=ifelse(salaire>0,0,enf1),salaireenf1=salaire)%>%
+  select(-anaiss,-salaire)%>%
+  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf1"="Id","annee"="annee"))%>%
+  mutate(enf1=ifelse(matri==2,0,enf1),matrienf1=matri)%>%
+  select(-matri)
+
+test=test%>%
+  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf2"="Id"))%>%
+  mutate(enf2=ifelse((annee-anaiss)%in%seq(0,21),enf2,0),ageenf2=annee-anaiss)%>%
+  left_join(select(emploi,-statut),by=c("enf2"="Id","ageenf2"="age"))%>%
+  mutate(enf2=ifelse(salaire>0,0,enf2),salaireenf2=salaire)%>%
+  select(-anaiss,-salaire)%>%
+  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf2"="Id","annee"="annee"))%>%
+  mutate(enf2=ifelse(matri==2,0,enf2),matrienf2=matri)%>%
+  select(-matri)
+test=test%>%
+  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf3"="Id"))%>%
+  mutate(enf3=ifelse((annee-anaiss)%in%seq(0,21),enf3,0),ageenf3=annee-anaiss)%>%
+  left_join(select(emploi,-statut),by=c("enf3"="Id","ageenf3"="age"))%>%
+  mutate(enf3=ifelse(salaire>0,0,enf3),salaireenf3=salaire)%>%
+  select(-anaiss,-salaire)%>%
+  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf3"="Id","annee"="annee"))%>%
+  mutate(enf3=ifelse(matri==2,0,enf3),matrienf3=matri)%>%
+  select(-matri)
+test=test%>%
+  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf4"="Id"))%>%
+  mutate(enf4=ifelse((annee-anaiss)%in%seq(0,21),enf4,0),ageenf4=annee-anaiss)%>%
+  left_join(select(emploi,-statut),by=c("enf4"="Id","ageenf4"="age"))%>%
+  mutate(enf4=ifelse(salaire>0,0,enf4),salaireenf4=salaire)%>%
+  select(-anaiss,-salaire)%>%
+  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf4"="Id","annee"="annee"))%>%
+  mutate(enf4=ifelse(matri==2,0,enf4),matrienf4=matri)%>%
+  select(-matri)
+test=test%>%
+  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf5"="Id"))%>%
+  mutate(enf5=ifelse((annee-anaiss)%in%seq(0,21),enf5,0),ageenf5=annee-anaiss)%>%
+  left_join(select(emploi,-statut),by=c("enf5"="Id","ageenf5"="age"))%>%
+  mutate(enf5=ifelse(salaire>0,0,enf5),salaireenf5=salaire)%>%
+  select(-anaiss,-salaire)%>%
+  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf5"="Id","annee"="annee"))%>%
+  mutate(enf5=ifelse(matri==2,0,enf5),matrienf5=matri)%>%
+  select(-matri)
+test=test%>%
+  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf6"="Id"))%>%
+  mutate(enf6=ifelse((annee-anaiss)%in%seq(0,21),enf6,0),ageenf6=annee-anaiss)%>%
+  left_join(select(emploi,-statut),by=c("enf6"="Id","ageenf6"="age"))%>%
+  mutate(enf6=ifelse(salaire>0,0,enf6),salaireenf6=ifelse(enf6!=0,salaire,0))%>%
+  select(-anaiss,-salaire)%>%
+  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf6"="Id","annee"="annee"))%>%
+  mutate(enf6=ifelse(matri==2,0,enf6),matrienf6=matri)%>%
+  select(-matri)
+####################
+# calcul du nombre d'UC pour les adultes et les jeunes indépendants
+####################
+nbre_uc_adultes=test%>%
+  filter(!((age<=21)&(salaire_Id==0)&(matri_Id!=2)))%>%
+  mutate(enf1=ifelse(is.na(enf1),0,enf1),enf2=ifelse(is.na(enf2),0,enf2),enf3=ifelse(is.na(enf3),0,enf3),
+         enf4=ifelse(is.na(enf4),0,enf4),enf5=ifelse(is.na(enf5),0,enf5),enf6=ifelse(is.na(enf6),0,enf6))%>%
+  mutate(nbre_uc=ifelse(conjoint>0,0.75,1)+ifelse(enf1>0&ageenf1%in%15:21,0.25,0)+ifelse(enf2>0&ageenf2%in%15:21,0.25,0)+
+           ifelse(enf3>0&ageenf3%in%15:21,0.25,0)+ifelse(enf4>0&ageenf4%in%15:21,0.25,0)+ifelse(enf5>0&ageenf5%in%15:21,0.25,0)+
+           +ifelse(enf6>0&ageenf6%in%15:21,0.25,0)+ifelse(enf1>0&ageenf1%in%0:14,0.15,0)+ifelse(enf2>0&ageenf2%in%0:14,0.15,0)+
+           ifelse(enf3>0&ageenf3%in%0:14,0.15,0)+ifelse(enf4>0&ageenf4%in%0:14,0.15,0)+ifelse(enf5>0&ageenf5%in%0:14,0.15,0)+
+           +ifelse(enf6>0&ageenf6%in%0:14,0.15,0))%>%
+  select(Id,annee,age,matri_Id,conjoint,nbre_uc)
+
+summary(nbre_uc_adultes$nbre_uc)
+
+############################
+# calcul du nombre d'uc pour les jeunes
+# on ajoute les uc entre les parents comme on ajoutera les revenus 
+###############################
+
+nbre_uc_jeunes=test%>%
+  filter(age<=21&salaire_Id==0&matri_Id!=2)%>%
+  select(age,Id,annee,mere,pere,matri_Id)%>%
+  left_join(select(nbre_uc_adultes,Id,annee,nbre_uc),by=c("mere"="Id","annee"="annee"))%>%
+  rename(nbre_uc_mere=nbre_uc)%>%
+  left_join(select(nbre_uc_adultes,Id,annee,nbre_uc),by=c("pere"="Id","annee"="annee"))%>%
+  rename(nbre_uc_pere=nbre_uc)%>%
+  mutate(nbre_uc=ifelse(!is.na(nbre_uc_pere)&!is.na(nbre_uc_mere),(nbre_uc_pere+nbre_uc_mere),
+                        ifelse(!is.na(nbre_uc_pere),nbre_uc_pere,ifelse(!is.na(nbre_uc_mere),nbre_uc_mere,1))))
+
+
+nbre_uc=bind_rows(nbre_uc_jeunes,nbre_uc_adultes) 
+
+return(nbre_uc)
+}
