@@ -186,7 +186,6 @@ EP_lon <- data[['EP_lon']]
 menages_structural2 <- readRDS('start_estimation.rds')
 
 
-
 EP_2015[,'tr_age_2015' := floor(get("AGE")/5)*5]
 
 
@@ -212,7 +211,7 @@ simulations <- capitulation::life_cycle_model(
   Hreceived_var = "hr",
   return_last = FALSE,
   get_capital_income = TRUE,
-  additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq"))
+  additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC"))
 
 simulations <- simulations[age > findet]
 simulations[,'sexe' := get("SEXE")]
@@ -555,7 +554,21 @@ ggplot2::ggsave(plot = p_fit2[[2]], "./output_ret_soc_v2/fig05_fit_level_DT.pdf"
 
 # top income shares --------------------------
 
+destinie <- capitulation::import_Destinie(path_data = paste0(path_data,"/Destinie2120"),
+                                          extension = ".rda", format = "data.table")
+uc <- recompute_uc(destinie)
+
 simul_copy <- data.table::copy(simulations)
+simul_copy[,'UC' := NULL]
+data.table::setnames(uc, "nbre_uc", "UC")
+
+simul_copy <- merge(simul_copy, uc[,.SD, .SDcols = c("Id",'annee', "UC")], all.x =TRUE, by = c('Id','annee'))
+
+simul_household <- simul_copy[, lapply(.SD, sum), by = c("id_household","annee"),
+           .SDcols = c("revenu","wealth","Y", "UC")]
+simul_household[, `:=` (revenu = revenu/UC, wealth = wealth/UC, Y=Y/UC)]
+
+
 
 plot_top_shares2 <- function(simul_copy, threshold = 0.99, lang = c("eng","fr")){
   
@@ -600,20 +613,26 @@ plot_top_shares2 <- function(simul_copy, threshold = 0.99, lang = c("eng","fr"))
 }
 
 p3 <- plot_top_shares2(simul_copy, threshold = 0.9, lang = "eng")
+p3_household_top10 <- plot_top_shares2(simul_household, threshold = 0.9, lang = "eng")
+
 p3_fr <- plot_top_shares2(simul_copy, threshold = 0.9, lang = "fr")
-ggsave(plot = p3, sprintf("./output_ret_soc_v2/top10_DT.pdf", dir), width = 12, height = 8)
-ggsave(plot = p3_fr, sprintf("./output_ret_soc_v2/top10.png", dir), width = 12, height = 8)
-ggsave(plot = p3_fr, sprintf("./output_ret_soc_v2/top10.pdf", dir), width = 12, height = 8)
+p3_household_fr <- plot_top_shares2(simul_household, threshold = 0.9, lang = "fr")
+
+ggsave(plot = p3_household_top10, sprintf("./output_ret_soc_v2/top10_DT.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3_household_fr, sprintf("./output_ret_soc_v2/top10.png", dir), width = 12, height = 8)
+ggsave(plot = p3_household_fr, sprintf("./output_ret_soc_v2/top10.pdf", dir), width = 12, height = 8)
 data.table::fwrite(p3$data, "./output_ret_soc_v2/top10.csv")
 
 
 simul_copy <- data.table::copy(simulations)
 p3 <- plot_top_shares2(simul_copy, threshold = 0.99, lang = "eng")
+p3_household_top1 <- plot_top_shares2(simul_household, threshold = 0.99, lang = "eng")
 p3_fr <- plot_top_shares2(simul_copy, threshold = 0.99, lang = "fr")
+p3_household_fr <- plot_top_shares2(simul_household, threshold = 0.99, lang = "fr")
 
-ggsave(plot = p3, sprintf("./output_ret_soc_v2/top1_DT.pdf", dir), width = 12, height = 8)
-ggsave(plot = p3_fr, sprintf("./output_ret_soc_v2/top1.png", dir), width = 12, height = 8)
-ggsave(plot = p3_fr, sprintf("./output_ret_soc_v2/top1.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3_household_top1, sprintf("./output_ret_soc_v2/top1_DT.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3_household_fr, sprintf("./output_ret_soc_v2/top1.png", dir), width = 12, height = 8)
+ggsave(plot = p3_household_fr, sprintf("./output_ret_soc_v2/top1.pdf", dir), width = 12, height = 8)
 data.table::fwrite(p3$data, "./output_ret_soc_v2/top1.csv")
 
 plot_gini2 <- function(simul_copy, lang = c("English","French")){
@@ -657,12 +676,58 @@ plot_gini2 <- function(simul_copy, lang = c("English","French")){
 }
 
 p2 <- plot_gini2(simul_copy)
+p2_household <- plot_gini2(simul_household)
 p2_fr <- plot_gini2(simul_copy, "French")
-ggsave(plot = p2, sprintf("./output_ret_soc_v2/gini_evolution_noneg_DT.pdf", dir), width = 12, height = 8)
-ggsave(plot = p2_fr, sprintf("./output_ret_soc_v2/gini_evolution_noneg.png", dir), width = 12, height = 8)
-ggsave(plot = p2_fr, sprintf("./output_ret_soc_v2/gini_evolution_noneg.pdf", dir), width = 12, height = 8)
+p2_household_fr <- plot_gini2(simul_household, "French")
+ggsave(plot = p2_household, sprintf("./output_ret_soc_v2/gini_evolution_noneg_DT.pdf", dir), width = 12, height = 8)
+ggsave(plot = p2_household_fr, sprintf("./output_ret_soc_v2/gini_evolution_noneg.png", dir), width = 12, height = 8)
+ggsave(plot = p2_household_fr, sprintf("./output_ret_soc_v2/gini_evolution_noneg.pdf", dir), width = 12, height = 8)
 data.table::fwrite(p2$data, "./output_ret_soc_v2/gini.csv")
 
+
+# nviem_retraites/nviem_actifs
+
+
+retraites <- destinie$retraites[, c("Id", "annee", "retraite_nette")]
+retraites <- retraites[retraite_nette > 0]
+retraites[, c("statut_ret") := "retraite"]
+
+
+data_household_indiv <- merge(simul_copy, simul_household, by = c("id_household", "annee"),
+      suffixes = c("_indiv","_household"))
+data_household_indiv <- merge(data_household_indiv, retraites, by = c("Id","annee"), all.x = TRUE)
+data_household_indiv[is.na(statut_ret), "statut_ret" := "actif"]
+
+agg_nv = data_household_indiv[,.(w = mean(revenu_indiv/UC_indiv, na.rm = TRUE),
+                                 y = mean(Y_indiv/UC_indiv, na.rm = TRUE)), by = c("statut_ret",'annee')]
+agg_nv_pop = data_household_indiv[,.(w_pop = mean(revenu_indiv/UC_indiv, na.rm = TRUE),
+                                     y_pop = mean(Y_indiv/UC_indiv, na.rm = TRUE)), by = c('annee')]
+agg_nv = merge(agg_nv, agg_nv_pop)
+agg_nv[, `:=`(w = w/w_pop,y = y/y_pop)]
+#agg_nv = dcast(agg_nv, annee ~ statut_ret, value.var = c("w","y"))
+# agg_nv[, `:=`(w = w_retraite/w_actif, y = y_retraite/y_actif)]
+# agg_nv_mean = data_household_indiv[,.(w = mean(revenu_uc), y = mean(Y_uc)), by = c("statut_ret",'annee')]
+# agg_nv_mean[annee == 2013, t := w/mean(data_household_indiv[annee == 2013]$revenu_uc)]
+# agg_nv_mean[annee == 2013]
+
+cols <- c("w" = "red", "y" = "blue")
+
+p <- ggplot2::ggplot(melt(agg_nv[statut_ret == "retraite" & annee >2009,c('annee', 'w',"y")], id.vars = "annee")) +
+  geom_line(aes(x = annee, y = value, color = variable)) +
+  scale_y_continuous(labels = scales::percent) +
+  coord_cartesian(xlim = c(2010, 2040)) +
+  theme_bw() +
+  scale_color_manual(values = cols, breaks = c("w", "y"),
+                     labels = c("Labor income", "Total income (capital income included)")) +
+  theme(legend.position = "bottom") +
+  labs(color = NULL, x = "Year",
+       y = "Relative standard of living of retirees\n(wrt whole population)") +
+  theme(text = element_text(size=20),
+      axis.text=element_text(size=20),
+      axis.title = element_text(size = 22, face="bold"))
+
+ggplot2::ggsave(plot = p, filename = "./output_ret_soc_v2/standard_livings_DT.pdf",
+                width = 13, height = 9)
 
 
 # Table 1: data used for external validation ---------
@@ -819,6 +884,7 @@ tablelight:::stack_summary(object = list(simulations_2015,
 
 # Table 9: top income and wealth simulated shares --------
 
+# niveau indiv ========
 
 simulations[,'wealth_trunc' := pmax(0, get('wealth'))]
 simulations[,'wealth_trunc' := get('wealth_trunc') + exp(rnorm(nrow(simulations)))]
@@ -834,6 +900,7 @@ table_share <- merge(
   merge(sh_labor, sh_income),
   sh_wealth
 )[order(-Group)]
+
 
 
 EP_2015[,'wealth_trunc' := pmax(0, get('PATRI_NET'))]
@@ -893,6 +960,115 @@ latex_table[latex_table == "\\midrule \\\\ "] <- "\\midrule"
 cat(latex_table, sep = "\n")
 
 
+# niveau menage =================
+
+simul_household[,'wealth_trunc' := pmax(0, get('wealth'))]
+simul_household[,'wealth_trunc' := get('wealth_trunc') + exp(rnorm(nrow(simul_household)))]
+
+get_share <- function(data_share, group = "Top 1 \\%"){
+  data_share <- data_share[annee==2015]
+  dt <- data.table::data.table(
+    'revenu' = 100*t(data_share[["share"]])[1],
+    'Y' = 100*t(data_share[["share"]])[3],
+    'wealth_trunc' = 100*t(data_share[["share"]])[2]
+    )
+  dt[,"Group" := group]
+  data.table::setcolorder(dt,c("Group","revenu","Y", "wealth_trunc"))
+  return(dt)
+}
+
+
+table_share <- data.table::rbindlist(
+  list(get_share(p3_household_top10$data,"Top 10 \\%")[],
+       get_share(p3_household_top1$data)[]
+  ))
+
+# sh_wealth <- share_total(simulations = simul_household,
+#                          yvar = "wealth_trunc")
+# sh_labor <- share_total(simulations = simulations,
+#                         yvar = "revenu")
+# sh_income <- share_total(simulations = simulations,
+#                          yvar = "Y")
+# 
+# table_share <- merge(
+#   merge(sh_labor, sh_income),
+#   sh_wealth
+# )[order(-Group)]
+
+
+cols_wealth <- c('PATRI_NET','PATRI_BRUT',
+                 'PATFI',
+                 'PATFISOM','PATIMM',
+                 'PATPROFENT','PATPROFHENT',
+                 "MTDETTES")
+cols_wealth <- c(cols_wealth,
+                 "ZSALAIRES",  "ZRETRAITES", "ZCHOMAGE")
+
+EP_2015_menages <- wealthyR:::read_EP(capitulation::macro,
+                           path_data = path_data,
+                           year = 2015,
+                           level = "household",
+                           .colsWealth = c('IDENT','AGEPR',
+                                           cols_wealth,
+                                           'NBUC','NPERS'))
+EP_2015_menages[, 'labor_income' := ZSALAIRES + ZRETRAITES + ZCHOMAGE]
+EP_2015_menages[, `:=` (labor_income = labor_income/NBUC, PATRI_NET = PATRI_NET/NBUC)]
+
+
+EP_2015_menages[,'wealth_trunc' := pmax(0, get('PATRI_NET'))]
+EP_2015_menages[,'wealth_trunc' := get('PATRI_NET') + exp(rnorm(nrow(EP_2015_menages)))]
+EP_2015_menages[,'Y' := get("labor_income") + r*get("w_real")]
+
+sh_wealth2 <- share_total(simulations = EP_2015_menages, yvar = "wealth_trunc")
+sh_labor2 <- share_total(simulations = EP_2015_menages, yvar = "labor_income", jitterize = TRUE)
+sh_income2 <- share_total(simulations = EP_2015_menages, yvar = "Y")
+
+table_share2 <- merge(
+  merge(sh_labor2, sh_income2),
+  sh_wealth2
+)[order(-Group)]
+
+
+
+data.table::setnames(table_share, old = c("revenu", "Y", "wealth_trunc"),
+                     new = c("Labor income","Total income",
+                             "Financial wealth"))
+data.table::setnames(table_share2, old = c("labor_income", "Y", "wealth_trunc"),
+                     new = c("Labor income","Total income",
+                             "Financial wealth"))
+
+df <- do.call(c,
+              lapply(1:nrow(table_share), function(i) paste(format(table_share[i], digits=3L), collapse = " & "))
+)
+df2 <- do.call(c,
+               lapply(1:nrow(table_share2), function(i) paste(format(table_share2[i], digits=3L), collapse = " & "))
+)
+
+latex_table <- c(
+  "\\begin{table}[ht]",
+  "\\centering",
+  "\\caption{Top income and wealth simulated shares (in \\%)}",
+  "\\label{tab: concentration}",
+  "\\begin{tabular}{lrrr}",
+  "\\hline",
+  "\\textsc{Group} & \\textsc{Labor income} & \\textsc{Total income} & \\textsc{Net wealth} \\\\",
+  "\\hline",
+  paste0(c("\\multicolumn{4}{c}{\\textsc{Wealth survey}}",
+           paste(df2, collapse = " \\\\ "),
+           "\\midrule",
+           "\\multicolumn{4}{c}{\\textsc{Simulated data}}",
+           paste(df, collapse = " \\\\ ")
+  ), " \\\\ "),
+  "\\bottomrule",
+  "\\multicolumn{4}{p{0.9\\linewidth}}{In this table, total income represents labor income (labor earnings, unemployment benefits and retirement pensions) plus financial income assuming a 3\\% return on observed or simulated wealth. Negative wealth are bottom-coded to zero in this Table} \\\\",
+  "\\multicolumn{4}{p{0.9\\linewidth}}{Wealth survey data comes from \\textit{Enquête Patrimoine 2014-2015}. Household financial wealth is individualized using number of spouses in the household.} \\\\",
+  "\\multicolumn{4}{p{0.9\\linewidth}}{Simulated data come from \\textit{Destinie} microsimulated data. Household labor income is individualized between spouses. Wealth is individual simulated wealth based on Section \\ref{sec:model} model and structural parameters derived from estimation}",
+  "\\end{tabular}",
+  "\\end{table}"
+)
+latex_table[latex_table == "\\midrule \\\\ "] <- "\\midrule"
+
+cat(latex_table, sep = "\n")
 
 
 # PATRIMOINE ===============

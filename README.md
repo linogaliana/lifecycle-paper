@@ -29,9 +29,6 @@ Les packages suivants sont utilisés:
 
 ## Exécution
 
-Les scripts principaux:
-
 - Le script `estimation.R` est le script maître pour l'estimation
 - Le script `output-DT.R` génère les résultats
-
 
