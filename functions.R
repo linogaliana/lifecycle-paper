@@ -1,3 +1,35 @@
+tweak_oglm <- function(inheritance_model){
+  class(inheritance_model) <- c("oglm","oglmx")
+  return(inheritance_model)
+}
+
+create_estim_data <- function(inheritance_data){
+  
+  estim_data <-data.table::copy(inheritance_data)#[get('income')>0]
+  
+  estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
+  estim_data[,'age' := get('AGE')]
+  
+  
+  estim_data <- estim_data[get('age') < 80]
+  estim_data <- estim_data[get('income')>0]
+  
+  
+  estim_data[, c('N_heritiers') := .N, by = c("annee","IDENT","IDENTTRANS")]
+  
+  
+  #data.table::fwrite(estim_data, "./modele-heritage/estimsample.csv")
+  
+  estim_data[is.na(get("MTHER")), c("MTHER") := 0]
+  estim_data[, inherited := (MTHER != 0) ]
+  estim_data$inherited <- factor(as.numeric(estim_data$inherited))
+  estim_data <- estim_data[order(MTHER)]
+  
+  estim_data <- na.omit(estim_data, cols = c("inherited","tr_age","tr_agfinetu","SEXE", "lw", "MTHER"))
+  
+  return(estim_data)
+}
+
 create_inheritance_model <- function(path_survey =  "~/Enquete Patrimoine",
                                      formula = "MTHER ~ lw + tr_age + SEXE + tr_agfinetu",
                                      selection = NULL,
