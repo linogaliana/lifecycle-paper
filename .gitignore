@@ -20,3 +20,5 @@ inst/*
 *.png
 *.zip
 *.rds
+
+_targets/

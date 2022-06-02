@@ -1,3 +1,135 @@
+finalize_prediction_table <- function(household_table){
+  dt <- data.table::copy(household_table)
+  if ('non_ricardian' %in% colnames(dt)){
+    dt[is.na(non_ricardian), c("non_ricardian") := get("H_given")>0]
+  }
+  dt[,'hg' := get('H_given')]
+  dt[,'hr' := get('H_received')]
+  dt[,'tr_age_2015' := floor(get("age")/5)*5]
+  return(dt)
+}
+
+arrange_household_table <- function(indiv, macro,
+                                    id_var = "Id",
+                                    income_var = "salaire",
+                                    age_var = "age",
+                                    ageliq_var = "ageliq",
+                                    matrimonial_var = "matri",
+                                    wealthvar_survey = "PATFISOM",
+                                    debt_wealthSurvey = NULL,
+                                    findet_var = "findet",
+                                    weight_var = NULL,
+                                    deflate = TRUE,
+                                    time_0 = c("birth","graduation")){
+  
+  time_0 <- match.arg(time_0)
+  
+  # GET REAL VALUES
+  household_table <- merge(indiv, macro, by = 'annee')
+  household_table[,'y_real' := get('salaire_tot')/get('Prix')]
+  
+  
+  # WEALTH CONCEPT: NOMINAL OR REAL
+  if (deflate)
+    household_table[, (wealthvar_survey) := get(wealthvar_survey)/get('Prix')]
+  
+  # KEEP ONLY OBSERVATION AFTER STARTING WORKING LIFE
+  if (time_0 == "graduation") household_table <- household_table[get(age_var)>=get(findet_var)]
+  
+  
+  household_table[,`:=` ('y_indiv' = get('y_real')/get('nspouses'),
+                         'K_observed' = get(wealthvar_survey)/get('nspouses')
+  )]
+  
+  household_table[, c("K_observed") := mean(get("K_observed"),na.rm=TRUE), by = c('Id')]
+  
+  if (is.null(weight_var)){
+    household_table[, "weight" := 1L]
+    weight_var <- "weight"
+  }
+  
+  id_household <- as.character(
+    household_table[, paste0(do.call(pmin, .SD), "_", do.call(pmax, .SD)), .SDcols = c("Id",'conjoint')]
+  )
+  household_table[, 'id_household' := id_household]
+  
+  
+  household_table <- household_table[,.SD,
+                                     .SDcols = c(id_var,"annee", 'id_household',
+                                                 'y_indiv',
+                                                 'K_observed', age_var,
+                                                 ageliq_var,
+                                                 "tt", #weight_var,
+                                                 "sexe", "UC"
+                                                 #findet_var
+                                     )]  
+  
+  return(household_table)
+}
+
+read_mortality_table_sex <- function(path_mortalite, sex = "F"){
+  
+  data_wide <- readxl::read_excel(
+    path_mortalite, sheet = paste0("deces", sex),
+    skip = 1
+  )
+  data.table::setDT(data_wide)
+  data.table::setnames(data_wide, old = colnames(data_wide)[1], new = "age")
+  # remove end of excel
+  data_wide <- data_wide[age %in% as.character(seq(0, 120))]
+  colnames(data_wide) <- gsub(" \\(p\\)", "", colnames(data_wide))
+  
+  data_long <- data.table::melt(data_wide, id.vars = "age",
+                                variable.name = "annee",
+                                value.name = "deces")
+  data_long[, c('sexe') := sex]
+  data_long[, annee := as.numeric(as.character(annee))]
+  
+  # gere les cohortes avant 1962 et celles après 2070
+  start <- min(data_long$annee, na.rm = TRUE)
+  end <- max(data_long$annee, na.rm = TRUE)
+  tweak_survival <- function(year, data_long, anchor){
+    tmp = data.table::copy(data_long[annee == anchor])
+    tmp[ , c('annee') := year]
+    return(tmp)
+  } 
+  tempdf_before = data.table::rbindlist(
+    lapply(1900:(start-1), tweak_survival, data_long = data_long, anchor = start)
+  )
+  tempdf_after = data.table::rbindlist(
+    lapply((end+1):2120, tweak_survival, data_long = data_long, anchor = start)
+  )
+  
+  data_long <- data.table::rbindlist(
+    list(tempdf_before, data_long, tempdf_after)
+  )
+  
+  data_long[, c('cohorte') := annee - as.numeric(age)]
+  
+  
+  data_long[, c('total_deces') := cumsum(deces), by = c("cohorte")]
+  data_long[, c('survivants') := sum(deces) - total_deces, by = c("cohorte")]
+  data_long[, c('proba_deces') := deces/sum(deces), by = "cohorte"]
+  data_long[, c('proba_survie') := 1 - cumsum(proba_deces), by = c("cohorte")]
+  
+  data_long[, .SD,.SDcols = c("age","annee","sexe","cohorte","proba_survie")]
+  
+  
+  return(data_long)
+}
+
+create_mortality_table <- function(path_mortalite){
+  mortality_women <- read_mortality_table_sex(path_mortalite)
+  mortality_men <- read_mortality_table_sex(path_mortalite, "H")
+  mortality <- data.table::rbindlist(
+    list(mortality_men, mortality_women)
+  )
+  mortality[, 'sexe' := data.table::fifelse(sexe == "H", 1, 2)]
+  mortality[,'age' := as.numeric(age)]
+  return(mortality)
+}
+
+
 tweak_oglm <- function(inheritance_model){
   class(inheritance_model) <- c("oglm","oglmx")
   return(inheritance_model)
