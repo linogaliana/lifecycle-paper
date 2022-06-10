@@ -25,6 +25,11 @@ wealthvar_survey = "PATRI_NET"
 debt_wealthSurvey = NULL
 drawK = TRUE
 
+beta  <- 0.992
+gamma <- 1
+r <- 0.03
+alpha <- 2.5e-6
+
 list(
   
   tar_target(
@@ -231,12 +236,29 @@ list(
   tar_target(
     pre_prediction3,
     capitulation:::apply_inheritance_model(pre_prediction2, inheritance_model,
-                            selection_model = NULL)
+                                           selection_model = NULL)
   ),
   
   tar_target(
     data_prediction,
     finalize_prediction_table(pre_prediction3)
+  ),
+  
+  tar_target(
+    simulations,
+    capitulation::life_cycle_model(
+      data_prediction,
+      wealthvar_survey = "K_observed",
+      r = r,
+      beta = beta,
+      gamma = gamma,
+      observation_year = 2009,
+      income_var = "revenu",
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      return_last = FALSE,
+      get_capital_income = TRUE,
+      additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC"))
   )
   
   
