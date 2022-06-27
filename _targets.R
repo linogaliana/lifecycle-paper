@@ -306,7 +306,9 @@ list(
                                   observed_moment_data = NULL,
                                   r = r,
                                   gamma = gamma,
-                                  beta = beta,
+                                  beta = as.numeric(
+                                    output$estimates$theta_hat
+                                  ),
                                   r.parameters = NULL,
                                   gamma.parameters = NULL,
                                   beta.parameters = NULL,
@@ -364,6 +366,42 @@ list(
       additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
     )
   ),
+  tar_target(
+    output_uncertainty,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9,
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = gamma,
+      probability_survival_var = "proba_survie",
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  
   tar_target(
     output_selection,
     mindist::estimation_theta(
@@ -444,7 +482,9 @@ list(
                                   probability_survival_var = "proba_survie",
                                   r = r,
                                   gamma = gamma,
-                                  beta = beta,
+                                  beta = as.numeric(
+                                    output_uncertainty$estimates$theta_hat
+                                    ),
                                   r.parameters = NULL,
                                   gamma.parameters = NULL,
                                   beta.parameters = NULL,
@@ -468,6 +508,78 @@ list(
                                   by = c("tr_age_2015", "tr_age_2015"))  
   ),
   
+  tar_target(
+    test_moments_uncertainty_selection,
+    wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
+                                  EP_lon = EP_lon, 
+                                  data_microsimulated = data_prediction_selection,
+                                  observed_moment_data = NULL,
+                                  probability_survival_var = "proba_survie",
+                                  r = r,
+                                  gamma = gamma,
+                                  beta = as.numeric(
+                                    output_uncertainty_selection$estimates$theta_hat
+                                  ),
+                                  r.parameters = NULL,
+                                  gamma.parameters = NULL,
+                                  beta.parameters = NULL,
+                                  r_low = r,
+                                  r_high = r,
+                                  N_moments = 180,
+                                  wealth_var = "PATRI_NET",
+                                  age_var_simulations = "age",
+                                  normalize = FALSE,
+                                  scale_model = "log",
+                                  scale_variable_moment1 = "asinh",
+                                  scale_variable_moment2 = "log",
+                                  scale_moment1 = "level",                               
+                                  moment1 = "level",
+                                  stat_moment2 = "difference",
+                                  ages = c(30,65),
+                                  exclude_negative = FALSE,
+                                  Hgiven_var = "hg",
+                                  Hreceived_var = "hr",
+                                  additional_vars = c("tr_age","SEXE","tr_agfinetu","findet"),
+                                  by = c("tr_age_2015", "tr_age_2015"))  
+  ),
+
+  tar_target(
+    test_moments_selection,
+    wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
+                                  EP_lon = EP_lon, 
+                                  data_microsimulated = data_prediction_selection,
+                                  observed_moment_data = NULL,
+                                  probability_survival_var = "proba_survie",
+                                  r = r,
+                                  gamma = gamma,
+                                  beta = as.numeric(
+                                    output_selection$estimates$theta_hat
+                                  ),
+                                  r.parameters = NULL,
+                                  gamma.parameters = NULL,
+                                  beta.parameters = NULL,
+                                  r_low = r,
+                                  r_high = r,
+                                  N_moments = 180,
+                                  wealth_var = "PATRI_NET",
+                                  age_var_simulations = "age",
+                                  normalize = FALSE,
+                                  scale_model = "log",
+                                  scale_variable_moment1 = "asinh",
+                                  scale_variable_moment2 = "log",
+                                  scale_moment1 = "level",                               
+                                  moment1 = "level",
+                                  stat_moment2 = "difference",
+                                  ages = c(30,65),
+                                  exclude_negative = FALSE,
+                                  Hgiven_var = "hg",
+                                  Hreceived_var = "hr",
+                                  additional_vars = c("tr_age","SEXE","tr_agfinetu","findet"),
+                                  by = c("tr_age_2015", "tr_age_2015"))  
+  ),
+  
+  
+    
   tar_target(
     plots_moments_uncertainty, 
     plot_moment_age_wide(test_moments_uncertainty)

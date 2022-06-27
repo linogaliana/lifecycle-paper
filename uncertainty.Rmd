@@ -1,0 +1,94 @@
+---
+title: "Comparaison résultats avec/sans incertitude"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", echo = FALSE, warning  = FALSE, message = FALSE)
+library(targets)
+source("functions.R", encoding = "UTF-8")
+```
+
+```{r}
+tar_load(output)
+tar_load(output_uncertainty)
+tar_load(test_moments)
+tar_load(test_moments_uncertainty)
+```
+
+
+```{r}
+p1 = plot_moment_age_wide(test_moments)
+p1_uncertainty = plot_moment_age_wide(test_moments_uncertainty)
+```
+
+```{r}
+theta_hat <- output$estimates$theta_hat
+theta_hat_se <- output$estimates$se_theta_hat
+print(sprintf("Modèle sans incertitude, beta: %s (%s)",
+              format(theta_hat, digits = 4),
+              format(theta_hat_se, digits = 2)))
+```
+
+```{r}
+theta_hat <- output_uncertainty$estimates$theta_hat
+theta_hat_se <- output_uncertainty$estimates$se_theta_hat
+print(sprintf("Modèle sans incertitude, beta: %s (%s)",
+              format(theta_hat, digits = 4),
+              format(theta_hat_se, digits = 2)))
+```
+
+## Moment 1
+
+Modèle sans incertitude:
+
+```{r}
+output$moments$moment_optimum[1:13]
+```
+
+Modèle avec incertitude:
+
+```{r}
+output_uncertainty$moments$moment_optimum[1:13]
+```
+
+Modèle sans incertitude:
+
+```{r}
+p1[[1]]
+```
+
+Modèle avec incertitude:
+
+```{r}
+p1_uncertainty[[1]]
+```
+
+
+## Moment 2
+
+Modèle sans incertitude: 
+
+```{r}
+output$moments$moment_optimum[14:21]
+```
+
+Modèle avec incertitude: 
+
+```{r}
+output_uncertainty$moments$moment_optimum[14:21]
+```
+
+Modèle sans incertitude: 
+
+```{r}
+p1[[2]]
+```
+
+Modèle avec incertitude: 
+
+
+```{r}
+p1_uncertainty[[2]]
+```
+
