@@ -28,7 +28,7 @@ drawK = TRUE
 beta  <- 0.992
 gamma <- 1
 r <- 0.03
-alpha <- 2.5e-6
+
 
 list(
   
@@ -62,6 +62,13 @@ list(
       threshparam = lbounds
     )
   ),
+  
+  tar_target(
+    probit_model,
+    glm(inherited ~ factor(tr_age) + factor(tr_agfinetu),
+        family = binomial(link = "probit"), 
+        data = estim_data)
+  ),  
   
   tar_target(
     inheritance_model,
@@ -240,14 +247,44 @@ list(
   ),
   
   tar_target(
+    pre_prediction3_selection,
+    capitulation:::apply_inheritance_model(pre_prediction2, inheritance_model,
+                                           selection_model = probit_model)
+  ),  
+  
+  tar_target(
     data_prediction,
     finalize_prediction_table(pre_prediction3)
   ),
   
   tar_target(
+    data_prediction_selection,
+    finalize_prediction_table(pre_prediction3_selection)
+  ),
+  
+  tar_target(
+    simulations2,
+    capitulation::life_cycle_model(
+      data_prediction[age>findet],
+      wealthvar_survey = "K_observed",
+      r = r,
+      beta = beta,
+      gamma = gamma,
+      observation_year = 2009,
+      income_var = "revenu",
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      probability_survival_var = "proba_survie",
+      return_last = FALSE,
+      get_capital_income = TRUE,
+      additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC"))
+  ),
+  
+  
+  tar_target(
     simulations,
     capitulation::life_cycle_model(
-      data_prediction,
+      data_prediction[age>findet],
       wealthvar_survey = "K_observed",
       r = r,
       beta = beta,
@@ -259,8 +296,186 @@ list(
       return_last = FALSE,
       get_capital_income = TRUE,
       additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC"))
-  )
+  ),
   
+  tar_target(
+    test_moments,
+    wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
+                                  EP_lon = EP_lon, 
+                                  data_microsimulated = data_prediction,
+                                  observed_moment_data = NULL,
+                                  r = r,
+                                  gamma = gamma,
+                                  beta = beta,
+                                  r.parameters = NULL,
+                                  gamma.parameters = NULL,
+                                  beta.parameters = NULL,
+                                  r_low = r,
+                                  r_high = r,
+                                  N_moments = 180,
+                                  wealth_var = "PATRI_NET",
+                                  age_var_simulations = "age",
+                                  normalize = FALSE,
+                                  scale_model = "log",
+                                  scale_variable_moment1 = "asinh",
+                                  scale_variable_moment2 = "log",
+                                  scale_moment1 = "level",                               
+                                  moment1 = "level",
+                                  stat_moment2 = "difference",
+                                  ages = c(30,65),
+                                  exclude_negative = FALSE,
+                                  Hgiven_var = "hg",
+                                  Hreceived_var = "hr",
+                                  additional_vars = c("tr_age","SEXE","tr_agfinetu","findet"),
+                                  by = c("tr_age_2015", "tr_age_2015"))  
+  ),
+  
+  tar_target(
+    output,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9,
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = gamma,
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  tar_target(
+    output_selection,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9,
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = gamma,
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  
+  tar_target(
+    output_uncertainty_selection,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9,
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = gamma,
+      probability_survival_var = "proba_survie",
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  
+  tar_target(
+    test_moments_uncertainty,
+    wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
+                                  EP_lon = EP_lon, 
+                                  data_microsimulated = data_prediction,
+                                  observed_moment_data = NULL,
+                                  probability_survival_var = "proba_survie",
+                                  r = r,
+                                  gamma = gamma,
+                                  beta = beta,
+                                  r.parameters = NULL,
+                                  gamma.parameters = NULL,
+                                  beta.parameters = NULL,
+                                  r_low = r,
+                                  r_high = r,
+                                  N_moments = 180,
+                                  wealth_var = "PATRI_NET",
+                                  age_var_simulations = "age",
+                                  normalize = FALSE,
+                                  scale_model = "log",
+                                  scale_variable_moment1 = "asinh",
+                                  scale_variable_moment2 = "log",
+                                  scale_moment1 = "level",                               
+                                  moment1 = "level",
+                                  stat_moment2 = "difference",
+                                  ages = c(30,65),
+                                  exclude_negative = FALSE,
+                                  Hgiven_var = "hg",
+                                  Hreceived_var = "hr",
+                                  additional_vars = c("tr_age","SEXE","tr_agfinetu","findet"),
+                                  by = c("tr_age_2015", "tr_age_2015"))  
+  ),
+  
+  tar_target(
+    plots_moments_uncertainty, 
+    plot_moment_age_wide(test_moments_uncertainty)
+  ),
+  tar_target(
+    plots_moments, 
+    plot_moment_age_wide(test_moments)
+  )
   
   
   

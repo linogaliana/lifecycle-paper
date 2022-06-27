@@ -1,3 +1,5 @@
+library(ggplot2)
+
 finalize_prediction_table <- function(household_table){
   dt <- data.table::copy(household_table)
   if ('non_ricardian' %in% colnames(dt)){
@@ -66,6 +68,120 @@ arrange_household_table <- function(indiv, macro,
   
   return(household_table)
 }
+
+plot_moment_age_wide <-function(df_moment2, ages = c(30,65),lang = c("fr","eng")){
+  
+  lang <- match.arg(lang)
+  
+  tempdat <- data.table::copy(df_moment2)
+  tempdat[,'Nmoment' := data.table::fifelse(
+    cumsum(weight) <= 1, paste0(as.character(20+(Nmoment-1)*5),"-",
+                                as.character(20+Nmoment*5)),
+    paste0(as.character(30+(Nmoment-14)*5),"-",
+           as.character(30+(Nmoment-13)*5))
+  )]
+  tempdat[, 'cumsum' := cumsum(weight)]
+  tempdat[, 'moment' := 1 + as.numeric(cumsum>1)]
+  tempdat[, c("cumsum") := NULL]
+  
+  tempdat <- split(tempdat, by = "moment")
+  tempdat <- lapply(tempdat, data.table::melt, id.vars = c("Nmoment", "moment"))
+  
+  if (lang == "fr"){
+    labs1 <- list(x = "Age",
+                  y = "Arcsinh(patrimoine médian)",
+                  labels = c("Simulée","Observée"),
+                  col = "Poids dans l'estimation (densité)",
+                  y2 = 'Densité')
+  } else{
+    labs1 <- list(x = "Age",
+                  y = "arcsinh(Median wealth)",
+                  labels = c("Simulated","Observed"),
+                  col = "Weight in estimation (density)",
+                  y2 = "Density")  
+  }
+  
+  m1 <- ggplot2::ggplot(tempdat[["1"]][variable != "weight"]) +
+    ggplot2::geom_bar(ggplot2::aes(x = Nmoment, y = value,
+                                   fill = variable), position = "dodge",
+                      stat='identity', width=.5) +
+    geom_line(data = tempdat[["1"]][variable == "weight"],
+              aes(x = Nmoment, y = 100*value, color = labs1$col, group = 1)) +
+    geom_point(data = tempdat[["1"]][variable == "weight"],
+               aes(x = Nmoment, y = 100*value, color = labs1$col)) +
+    ggplot2::labs(x = labs1$x, y = labs1$y) +
+    ggplot2::scale_fill_manual(values = c('moment_simulations' = "#69b3a2",
+                                          'moment_data' = "#404080"),
+                               labels = labs1$labels) +
+    ggplot2::scale_color_manual('', values = "red", breaks = labs1$col) +
+    ggplot2::guides(fill = ggplot2::guide_legend(reverse=TRUE)) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(legend.position = "bottom") +
+    ggplot2::labs(y = labs1$y,
+                  fill = NULL) +
+    ggplot2::theme(text = ggplot2::element_text(size=28),
+                   axis.text=ggplot2::element_text(size=22),
+                   axis.text.x = ggplot2::element_text(angle = 45, hjust=1),
+                   axis.title = element_text(face = "bold"))
+  
+  m1 
+  
+  if (lang == "fr"){
+    labs2 <- list(x = "Age",
+                  y = "Evolution sur trois ans\ndu patrimoine (2015-2018)",
+                  labels = c("Simulée","Observée"),
+                  col = "Poids dans l'estimation",
+                  y2 = 'Densité')  
+  } else{
+    labs2 <- list(x = "Age",
+                  y =  "Median Wealth growth rate \nbetween 2015 and 2018",
+                  labels = c("Simulated","Observed"),
+                  col = "Weight in estimation",
+                  y2 = "Density")  
+  }
+  
+  m2 <- ggplot2::ggplot(tempdat[["2"]][variable != "weight"], ggplot2::aes(x = Nmoment,
+                                                                           y = value,
+                                                                           color = variable,
+                                                                           shape = variable,
+                                                                           group = variable)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_point() +
+    geom_line(data = tempdat[["2"]][variable == "weight"],
+              aes(x = Nmoment, y = value, color = "weight", group = 1), linetype = "dashed") +
+    geom_point(data = tempdat[["2"]][variable == "weight"],
+               aes(x = Nmoment, y = value, color = "weight"), alpha = 0.4, linetype = "dashed") +
+    ggplot2::geom_hline(yintercept = 0L) +
+    ggplot2::labs(x = labs2$x,
+                  y = labs2$y) +
+    ggplot2::scale_color_manual(values = c('moment_simulations' = 'black',
+                                           'moment_data' = 'royalblue',
+                                           "weight" = "red"),
+                                labels = c(labs2$labels, labs2$col)) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(legend.position = "bottom") +
+    ggplot2::labs(y = labs2$y,
+                  x = labs2$x, title = "") +
+    ggplot2::scale_y_continuous(labels = scales::percent) +
+    ggplot2::theme(legend.title=ggplot2::element_blank()) +
+    ggplot2::theme(text = ggplot2::element_text(size=28),
+                   axis.text=ggplot2::element_text(size=22),
+                   axis.text.x = ggplot2::element_text(angle = 45, hjust=1),
+                   axis.title = element_text(face = "bold")) +
+    guides(shape="none")
+  
+  m2b <- ggplot2::ggplot(tempdat[["2"]][variable == "weight"]) +
+    ggplot2::geom_bar(ggplot2::aes(x = Nmoment - 13, y = value), stat = 'identity') +
+    ggplot2::geom_point(ggplot2::aes(x = Nmoment - 13, y = value), color = 'red') +
+    ggplot2::labs(y = labs2$y2, x = labs2$x) +
+    ggplot2::scale_y_reverse()
+  
+  return(
+    list(m1, m2)
+  )
+  
+}
+
 
 read_mortality_table_sex <- function(path_mortalite, sex = "F"){
   
