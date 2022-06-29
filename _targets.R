@@ -57,9 +57,10 @@ list(
     oglm::oglmx(
       data = data.frame(estim_data[MTHER>0]),
       link = "probit",
-      formulaMEAN = "MTHER ~ factor(SEXE) + lw",
+      formulaMEAN = "MTHER ~ factor(SEXE) + lw + factor(tr_age) + factor(tr_agfinetu)",
       constantSD = TRUE,
-      threshparam = lbounds
+      threshparam = lbounds,
+      start_method = "search"
     )
   ),
   
@@ -261,6 +262,22 @@ list(
     data_prediction_selection,
     finalize_prediction_table(pre_prediction3_selection)
   ),
+  # 
+  # tar_target(
+  #   menages_structural2,
+  #   readRDS('start_estimation.rds'),
+  #   format = "fst_dt"
+  # ),
+  
+# 
+#   tar_target(
+#     data_prediction_selection2,
+#     merge(menages_structural2,
+#           data_prediction_selection[,.SD,.SDcols = c("Id","annee", "proba_survie")],
+#           by = c("Id","annee")),
+#     format = "fst_dt"
+#   ),
+  
   
   tar_target(
     simulations2,
@@ -302,7 +319,7 @@ list(
     test_moments,
     wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
                                   EP_lon = EP_lon, 
-                                  data_microsimulated = data_prediction,
+                                  data_microsimulated = data_prediction_selection,
                                   observed_moment_data = NULL,
                                   r = r,
                                   gamma = gamma,

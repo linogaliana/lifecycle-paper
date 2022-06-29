@@ -99,6 +99,7 @@ confusion <- data.table::melt(data.table::setDT(confusion), id.vars = "rn")
 
 
 
+
 plot_confusion <- function(langage = c('fr','eng')){
   
   langage <- match.arg(langage)

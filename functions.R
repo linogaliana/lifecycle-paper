@@ -258,10 +258,9 @@ create_estim_data <- function(inheritance_data){
   estim_data[,'MTHER' := as.numeric(as.character(MTHER))]
   estim_data[,'age' := get('AGE')]
   
-  
   estim_data <- estim_data[get('age') < 80]
   estim_data <- estim_data[get('income')>0]
-  
+  estim_data <- estim_data[get('age') > 20]
   
   estim_data[, c('N_heritiers') := .N, by = c("annee","IDENT","IDENTTRANS")]
   
@@ -377,7 +376,26 @@ construct_EP <- function(path_data = "~"){
                                           path_data = path_data,
                                           EP_2015 = EP_2015,
                                           EP_2018 = EP_2018)
+  
+  # SOME CLEANING 
+  
+  print("Cleaning survey data")
+  
+  EP_2015[,'y' := get('labor_income') + r*get('PATFISOM')]
+  EP_2015[, 'annee' := 2015]
+  clean_data2(EP_2015, sex_var = "SEXE", labor_income_var = "labor_income", diploma_var = "AGFINETU",
+              total_income_var = "y")
+  EP_2018[, 'annee' := 2018]
+  clean_data2(EP_2018, sex_var = "SEXE", year = 2018, diploma_var = "AGFINETU",
+              statut_var = "SITUA")
+  
   EP_lon[,'tr_age_2015' := floor(get("AGE_2015")/5)*5]
+  EP_lon[,'y' := get('labor_income_2015') + r*get('PATFISOM_2015')]
+  EP_lon <- merge(EP_lon, EP_2015[,.SD,.SDcols = c("IDENTIND14","tr_diplome", "decile_w", "decile_y")],
+                  by = c("IDENTIND14"))
+  EP_lon[, c('SEXE') := data.table::fifelse(get('SEXE')==1,
+                                            'Male',
+                                            'Female')]
   
   data <- list(
     'EP_2015' = EP_2015,
