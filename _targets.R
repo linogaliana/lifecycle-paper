@@ -29,6 +29,8 @@ beta  <- 0.992
 gamma <- 1
 r <- 0.03
 
+set.seed(1234)
+
 
 list(
   
@@ -135,6 +137,11 @@ list(
     simul,
     capitulation::import_Destinie(path_data = paste0(path_data, path_data_suffix),
                                   format = "data.table", extension = ".rda")
+  ),
+  
+  tar_target(
+    uc, 
+    recompute_uc(simul)
   ),
   
   tar_target(
@@ -269,23 +276,57 @@ list(
   #   format = "fst_dt"
   # ),
   
-# 
-#   tar_target(
-#     data_prediction_selection2,
-#     merge(menages_structural2,
-#           data_prediction_selection[,.SD,.SDcols = c("Id","annee", "proba_survie")],
-#           by = c("Id","annee")),
-#     format = "fst_dt"
-#   ),
+  # 
+  #   tar_target(
+  #     data_prediction_selection2,
+  #     merge(menages_structural2,
+  #           data_prediction_selection[,.SD,.SDcols = c("Id","annee", "proba_survie")],
+  #           by = c("Id","annee")),
+  #     format = "fst_dt"
+  #   ),
   
   
   tar_target(
     simulations2,
     capitulation::life_cycle_model(
-      data_prediction[age>findet],
+      data_prediction_selection[age>findet],,
       wealthvar_survey = "K_observed",
       r = r,
-      beta = beta,
+      beta =output_uncertainty_selection_no_trans$estimates$theta_hat,
+      gamma = gamma,
+      observation_year = 2009,
+      income_var = "revenu",
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      probability_survival_var = "proba_survie",
+      return_last = FALSE,
+      get_capital_income = TRUE,
+      additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC"))
+  ),
+  tar_target(
+    simulations2_contrefactuel_beta,
+    capitulation::life_cycle_model(
+      data_prediction_selection[age>findet],
+      wealthvar_survey = "K_observed",
+      r = r,
+      beta =output_selection$estimates$theta_hat,
+      gamma = gamma,
+      observation_year = 2009,
+      income_var = "revenu",
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      probability_survival_var = "proba_survie",
+      return_last = FALSE,
+      get_capital_income = TRUE,
+      additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC"))
+  ),
+  tar_target(
+    simulations2_trans,
+    capitulation::life_cycle_model(
+      data_prediction_selection[age>findet],
+      wealthvar_survey = "K_observed",
+      r = r,
+      beta = output_uncertainty_selection_no_trans$estimates$theta_hat,
       gamma = gamma,
       observation_year = 2009,
       income_var = "revenu",
@@ -297,11 +338,27 @@ list(
       additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC"))
   ),
   
-  
+    
+  tar_target(
+    simulations_contrefatuel_beta,
+    capitulation::life_cycle_model(
+      data_prediction_selection[age>findet],
+      wealthvar_survey = "K_observed",
+      r = r,
+      beta = output_uncertainty_selection_no_trans$estimates$theta_hat,
+      gamma = gamma,
+      observation_year = 2009,
+      income_var = "revenu",
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      return_last = FALSE,
+      get_capital_income = TRUE,
+      additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC"))
+  ),
   tar_target(
     simulations,
     capitulation::life_cycle_model(
-      data_prediction[age>findet],
+      data_prediction_selection[age>findet],
       wealthvar_survey = "K_observed",
       r = r,
       beta = beta,
@@ -457,6 +514,259 @@ list(
   tar_target(
     output_uncertainty_selection,
     mindist::estimation_theta(
+      theta_0 = c("beta" = mindist:::logit(0.9),
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = gamma,
+      trans_beta = "sigmoide",
+      probability_survival_var = "proba_survie",
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  tar_target(
+    output_uncertainty_selection_gamma12,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9, #mindist:::logit(0.9),
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = 1.2,
+      #trans_beta = "sigmoide",
+      probability_survival_var = "proba_survie",
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  tar_target(
+    output_uncertainty_selection_gamma12_no_risk,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9, #mindist:::logit(0.9),
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = 1.2,
+      #trans_beta = "sigmoide",
+      probability_survival_var = NULL,
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  tar_target(
+    output_uncertainty_selection_gamma09,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9, #mindist:::logit(0.9),
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = 0.9,
+      #trans_beta = "sigmoide",
+      probability_survival_var = "proba_survie",
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  tar_target(
+    output_uncertainty_selection_gamma08,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9, #mindist:::logit(0.9),
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = 0.8,
+      # trans_beta = "sigmoide",
+      probability_survival_var = "proba_survie",
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  tar_target(
+    output_uncertainty_selection_gamma08_no_risk,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = 0.9, #mindist:::logit(0.9),
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = 0.8,
+      # trans_beta = "sigmoide",
+      probability_survival_var = NULL,
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  tar_target(
+    output_uncertainty_selection_gamma11,
+    mindist::estimation_theta(
+      theta_0 = c("beta" = mindist:::logit(0.9),
+                  "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
+                  "r" = {if(is.null(r)) 0.03 else NULL}
+      ),
+      beta = NULL,
+      r = r,
+      gamma = 1.1,
+      trans_beta = "sigmoide",
+      probability_survival_var = "proba_survie",
+      approach = "two_step",
+      prediction_function = wealthyR:::model_capitulation,
+      non_ricardian = FALSE,
+      # non_ricardian_var = "non_ricardian",
+      EP_2015 = EP_2015,
+      EP_lon = EP_lon,
+      EP_2018 = EP_2018,
+      data_microsimulated = data_prediction_selection,
+      N_moments = 180,
+      wealth_var = "PATRI_NET",
+      by = c("tr_age_2015", "tr_age_2015"),
+      scale_model = "level",
+      scale_variable_moment1 = "asinh",
+      scale_variable_moment2 = "log",
+      stat_moment2 = 'difference',
+      moment1 = "level",
+      moments_weights = "weight",
+      verbose = TRUE,
+      Hgiven_var = "hg",
+      Hreceived_var = "hr",
+      method = "Nelder-Mead",
+      additional_vars = c("tr_age","SEXE","tr_agfinetu","findet")
+    )
+  ),
+  
+  tar_target(
+    output_uncertainty_selection_no_trans,
+    mindist::estimation_theta(
       theta_0 = c("beta" = 0.9,
                   "gamma" = {if(is.null(gamma)) gamma_0 else NULL},
                   "r" = {if(is.null(r)) 0.03 else NULL}
@@ -490,6 +800,7 @@ list(
     )
   ),
   
+  
   tar_target(
     test_moments_uncertainty,
     wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
@@ -501,7 +812,42 @@ list(
                                   gamma = gamma,
                                   beta = as.numeric(
                                     output_uncertainty$estimates$theta_hat
-                                    ),
+                                  ),
+                                  r.parameters = NULL,
+                                  gamma.parameters = NULL,
+                                  beta.parameters = NULL,
+                                  r_low = r,
+                                  r_high = r,
+                                  N_moments = 180,
+                                  wealth_var = "PATRI_NET",
+                                  age_var_simulations = "age",
+                                  normalize = FALSE,
+                                  scale_model = "log",
+                                  scale_variable_moment1 = "asinh",
+                                  scale_variable_moment2 = "log",
+                                  scale_moment1 = "level",                               
+                                  moment1 = "level",
+                                  stat_moment2 = "difference",
+                                  ages = c(30,65),
+                                  exclude_negative = FALSE,
+                                  Hgiven_var = "hg",
+                                  Hreceived_var = "hr",
+                                  additional_vars = c("tr_age","SEXE","tr_agfinetu","findet"),
+                                  by = c("tr_age_2015", "tr_age_2015"))  
+  ),
+  
+  tar_target(
+    test_moments_uncertainty_no_trans,
+    wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
+                                  EP_lon = EP_lon, 
+                                  data_microsimulated = data_prediction,
+                                  observed_moment_data = NULL,
+                                  probability_survival_var = "proba_survie",
+                                  r = r,
+                                  gamma = gamma,
+                                  beta = as.numeric(
+                                    output_uncertainty_selection_no_trans$estimates$theta_hat
+                                  ),
                                   r.parameters = NULL,
                                   gamma.parameters = NULL,
                                   beta.parameters = NULL,
@@ -534,8 +880,10 @@ list(
                                   probability_survival_var = "proba_survie",
                                   r = r,
                                   gamma = gamma,
-                                  beta = as.numeric(
-                                    output_uncertainty_selection$estimates$theta_hat
+                                  beta = mindist:::sigmoide(
+                                    as.numeric(
+                                      output_uncertainty_selection$estimates$theta_hat
+                                    )
                                   ),
                                   r.parameters = NULL,
                                   gamma.parameters = NULL,
@@ -559,7 +907,7 @@ list(
                                   additional_vars = c("tr_age","SEXE","tr_agfinetu","findet"),
                                   by = c("tr_age_2015", "tr_age_2015"))  
   ),
-
+  
   tar_target(
     test_moments_selection,
     wealthyR:::create_moment_data(EP_2015 = EP_2015, EP_2018 = EP_2018,
@@ -596,16 +944,69 @@ list(
   ),
   
   
-    
+  
   tar_target(
     plots_moments_uncertainty, 
-    plot_moment_age_wide(test_moments_uncertainty)
+    plot_moment_age_wide(test_moments_uncertainty_no_trans)
   ),
+  
   tar_target(
     plots_moments, 
     plot_moment_age_wide(test_moments)
+  ),
+  
+  tar_target(
+    data_consumption,
+    create_data_consumption(data_prediction_selection,
+                            beta = 0.99),
+    format  = "fst_dt"
+  ),
+  
+  tar_target(
+    plot_ct,
+    plot_data_consumption(data_consumption),
+  ),
+  
+  tar_target(
+    data_consumption_no_risk,
+    create_data_consumption(
+      data_prediction_selection,
+      probability_survival_var = NULL,
+      beta = 0.99,
+    ),
+    format  = "fst_dt"
+  ),
+  
+  tar_target(
+    plot_ct_no_risk,
+    plot_data_consumption(
+      data_consumption_no_risk
+    )
+  ),
+  
+  tar_target(
+    simul_copy,
+    restructure_simulations(simulations2, uc),
+    format  = "fst_dt"
+  ),
+  
+  tar_target(
+    simul_copy_no_risk,
+    restructure_simulations(simulations, uc),
+    format  = "fst_dt"
+  ),
+
+  tar_target(
+    simul_household,
+    create_simul_household(simul_copy),
+    format  = "fst_dt"
+  ),
+
+  tar_target(
+    simul_household_no_risk,
+    create_simul_household(simul_copy_no_risk),
+    format  = "fst_dt"
   )
   
-  
-  
+    
 )

@@ -1,6 +1,6 @@
 library(tablelight)
 library(data.table)
-library(ggplot2) 
+library(ggplot2)
 
 source("functions.R", encoding = "UTF-8")
 
@@ -100,42 +100,6 @@ confusion <- data.table::melt(data.table::setDT(confusion), id.vars = "rn")
 
 
 
-plot_confusion <- function(langage = c('fr','eng')){
-  
-  langage <- match.arg(langage)
-  labs_x <- c(ifelse(langage == "eng", "No inheritance","Pas d'héritage"),
-              REtage:::get_labs(lbounds)
-  )
-  if (langage == "fr"){
-    labs_x <- gsub("Less than", "Moins de",labs_x)
-    labs_x <- gsub("More than", "Plus de",labs_x)
-  }
-  ylab <- ifelse(langage == "eng", 'Number of individuals', "Nombre d'individus")
-  xlab <- ifelse(langage == "eng", "Inherited amount in euros",
-                 "Valeur héritée (en euros)")
-  labels_legend <- if(langage == "eng") c("Observed","Predicted") else c("Observée", "Simulée")
-  
-  p <- ggplot(confusion) +
-    geom_histogram(aes(x = factor(value),fill = variable),
-                   stat = "count", alpha=0.6, position = 'dodge') +
-    scale_x_discrete(labels= labs_x) +
-    theme(legend.title=element_blank(), legend.position = "bottom",
-          axis.text.x = element_text(angle = 45, hjust=1)) +
-    labs(x = NULL, y = ylab)
-  
-  p <- p +
-    ggplot2::labs(y = ylab,
-                  x = xlab) +
-    ggplot2::scale_fill_manual(breaks = c("Observed","Predicted"),
-                               values=c("#69b3a2", "#404080"),
-                               labels = labels_legend) +
-    labs(fill = NULL) +
-    theme(text = element_text(size=20),
-          axis.text=element_text(size=20),
-          axis.title = element_text(size = 28, face="bold"))
-  
-  return(p)
-}
 
 p_french <- plot_confusion('fr')
 p_english <- plot_confusion('en')
@@ -554,16 +518,18 @@ ggplot2::ggsave(plot = p_fit2[[2]], "./output_ret_soc_v2/fig05_fit_level_DT.pdf"
 
 
 # top income shares --------------------------
+library(dplyr)
 
 destinie <- capitulation::import_Destinie(path_data = paste0(path_data,"/Destinie2120"),
                                           extension = ".rda", format = "data.table")
 uc <- recompute_uc(destinie)
 
-simul_copy <- data.table::copy(simulations)
+simul_copy <- data.table::copy(simulations2)
 simul_copy[,'UC' := NULL]
 data.table::setnames(uc, "nbre_uc", "UC")
 
-simul_copy <- merge(simul_copy, uc[,.SD, .SDcols = c("Id",'annee', "UC")], all.x =TRUE, by = c('Id','annee'))
+simul_copy <- merge(simul_copy, uc[,.SD, .SDcols = c("Id",'annee', "UC")],
+                    all.x =TRUE, by = c('Id','annee'))
 
 simul_household <- simul_copy[, lapply(.SD, sum), by = c("id_household","annee"),
            .SDcols = c("revenu","wealth","Y", "UC")]
@@ -972,7 +938,7 @@ get_share <- function(data_share, group = "Top 1 \\%"){
     'revenu' = 100*t(data_share[["share"]])[1],
     'Y' = 100*t(data_share[["share"]])[3],
     'wealth_trunc' = 100*t(data_share[["share"]])[2]
-    )
+  )
   dt[,"Group" := group]
   data.table::setcolorder(dt,c("Group","revenu","Y", "wealth_trunc"))
   return(dt)
@@ -1006,12 +972,12 @@ cols_wealth <- c(cols_wealth,
                  "ZSALAIRES",  "ZRETRAITES", "ZCHOMAGE")
 
 EP_2015_menages <- wealthyR:::read_EP(capitulation::macro,
-                           path_data = path_data,
-                           year = 2015,
-                           level = "household",
-                           .colsWealth = c('IDENT','AGEPR',
-                                           cols_wealth,
-                                           'NBUC','NPERS'))
+                                      path_data = path_data,
+                                      year = 2015,
+                                      level = "household",
+                                      .colsWealth = c('IDENT','AGEPR',
+                                                      cols_wealth,
+                                                      'NBUC','NPERS'))
 EP_2015_menages[, 'labor_income' := ZSALAIRES + ZRETRAITES + ZCHOMAGE]
 EP_2015_menages[, `:=` (labor_income = labor_income/NBUC, PATRI_NET = PATRI_NET/NBUC)]
 

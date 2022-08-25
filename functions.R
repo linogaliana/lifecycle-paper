@@ -1,4 +1,6 @@
 library(ggplot2)
+library(magrittr)
+library(dplyr)
 
 finalize_prediction_table <- function(household_table){
   dt <- data.table::copy(household_table)
@@ -691,14 +693,14 @@ plot_K_age2 <- function(simulations, observed_data,
     geom_smooth(data = dataframes[age %between% c(30,75) & source == "survey"], aes(x = age, y = wealth), color = "black", linetype = "dashed",
                 se = FALSE)
   
-
+  
   p <- p + annotate("segment", x = 60, xend = 55,
-                y = temp$data[age == 55]$predict - (max(temp$data$predict) - min(temp$data$predict))/2,
-                yend = temp$data[age == 55]$predict,
-             colour = "black", size = 1, arrow = arrow(length = unit(2, "mm"))) +
-     annotate(geom = "text", x = 56, y = temp$data[age == 55]$predict - (max(temp$data$predict) - min(temp$data$predict))/1.9,
-              label = labelcurve, hjust = "left", color = "black", size = 5)
-
+                    y = temp$data[age == 55]$predict - (max(temp$data$predict) - min(temp$data$predict))/2,
+                    yend = temp$data[age == 55]$predict,
+                    colour = "black", size = 1, arrow = arrow(length = unit(2, "mm"))) +
+    annotate(geom = "text", x = 56, y = temp$data[age == 55]$predict - (max(temp$data$predict) - min(temp$data$predict))/1.9,
+             label = labelcurve, hjust = "left", color = "black", size = 5)
+  
   p <- p + annotate("segment", x = 60, xend = 55,
                     y = temp2$data[age == 55 & annee == 2015]$predict + (max(temp2$data[annee == 2015]$predict) - min(temp2$data[annee == 2015]$predict))/2,
                     yend = temp2$data[age == 55 & annee == 2015]$predict,
@@ -879,128 +881,580 @@ share_total <- function(simulations, yvar = "wealth", jitterize = FALSE){
 }
 
 
-recompute_uc <- function(table){
-
-table=simul$macro%>%select(annee,Prix,PlafondSS,SMIC,PointFP,SMPT,PIB,RevaloSPC,RevaloRG,RevaloFP,MinVieil1,MinVieil2,
-                           Mincont1,Mincont2,SalValid)%>%
-  mutate(Mincont2/lag(Mincont2)-1)
-
-
-##################
-#calcul du niveau de vie des retraités
-#################
-emploi=simul$emp%>%
-  select(age,Id, statut)%>%
-  left_join(simul$salairenet)
-
-emploi=emploi%>%mutate(salaire=salaires_net)%>%
-  select(-salaires_net)
-
-
-
-test=select(filter(emploi,statut!=0),Id,age,salaire)%>% # Note : statut != 0 -> l'individu est encore présent
-  rename(salaire_Id=salaire)%>%
-  left_join((simul$ech)[,c('Id','anaiss')])%>%
-  left_join(simul$fam%>%
-              group_by(Id)%>%
-              mutate(firstf=annee==first(annee),prem_obs=first(annee))%>%
-              filter(firstf==T)%>%
-              select(Id,prem_obs))%>%  # on ne garde que les les observations à partir de la première observation dans fam
-  mutate(annee=age+anaiss)%>%
-  filter(annee>=prem_obs)%>%
-  select(-prem_obs,-anaiss)%>%
-  left_join(simul$fam)%>%
-  rename(matri_Id=matri)%>%
-  mutate(conjoint=ifelse(matri_Id==3,0,conjoint)) #pour les veufs je met le conjoint à 0
-
-test=test%>%  
-  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf1"="Id"))%>% # on verifie ensuite pour chaque enfant s'il est à charge ou non c'est à dire s'il a moins de 21 ans
-  mutate(ageenf1=annee-anaiss,enf1=ifelse((annee-anaiss)%in%seq(0,21),enf1,0))%>% # et s'il n'a pas de revnu du travail
-  left_join(select(emploi,-statut),by=c("enf1"="Id","ageenf1"="age"))%>%
-  mutate(enf1=ifelse(salaire>0,0,enf1),salaireenf1=salaire)%>%
-  select(-anaiss,-salaire)%>%
-  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf1"="Id","annee"="annee"))%>%
-  mutate(enf1=ifelse(matri==2,0,enf1),matrienf1=matri)%>%
-  select(-matri)
-
-test=test%>%
-  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf2"="Id"))%>%
-  mutate(enf2=ifelse((annee-anaiss)%in%seq(0,21),enf2,0),ageenf2=annee-anaiss)%>%
-  left_join(select(emploi,-statut),by=c("enf2"="Id","ageenf2"="age"))%>%
-  mutate(enf2=ifelse(salaire>0,0,enf2),salaireenf2=salaire)%>%
-  select(-anaiss,-salaire)%>%
-  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf2"="Id","annee"="annee"))%>%
-  mutate(enf2=ifelse(matri==2,0,enf2),matrienf2=matri)%>%
-  select(-matri)
-test=test%>%
-  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf3"="Id"))%>%
-  mutate(enf3=ifelse((annee-anaiss)%in%seq(0,21),enf3,0),ageenf3=annee-anaiss)%>%
-  left_join(select(emploi,-statut),by=c("enf3"="Id","ageenf3"="age"))%>%
-  mutate(enf3=ifelse(salaire>0,0,enf3),salaireenf3=salaire)%>%
-  select(-anaiss,-salaire)%>%
-  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf3"="Id","annee"="annee"))%>%
-  mutate(enf3=ifelse(matri==2,0,enf3),matrienf3=matri)%>%
-  select(-matri)
-test=test%>%
-  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf4"="Id"))%>%
-  mutate(enf4=ifelse((annee-anaiss)%in%seq(0,21),enf4,0),ageenf4=annee-anaiss)%>%
-  left_join(select(emploi,-statut),by=c("enf4"="Id","ageenf4"="age"))%>%
-  mutate(enf4=ifelse(salaire>0,0,enf4),salaireenf4=salaire)%>%
-  select(-anaiss,-salaire)%>%
-  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf4"="Id","annee"="annee"))%>%
-  mutate(enf4=ifelse(matri==2,0,enf4),matrienf4=matri)%>%
-  select(-matri)
-test=test%>%
-  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf5"="Id"))%>%
-  mutate(enf5=ifelse((annee-anaiss)%in%seq(0,21),enf5,0),ageenf5=annee-anaiss)%>%
-  left_join(select(emploi,-statut),by=c("enf5"="Id","ageenf5"="age"))%>%
-  mutate(enf5=ifelse(salaire>0,0,enf5),salaireenf5=salaire)%>%
-  select(-anaiss,-salaire)%>%
-  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf5"="Id","annee"="annee"))%>%
-  mutate(enf5=ifelse(matri==2,0,enf5),matrienf5=matri)%>%
-  select(-matri)
-test=test%>%
-  left_join((simul$ech)[,c('Id','anaiss')],by=c("enf6"="Id"))%>%
-  mutate(enf6=ifelse((annee-anaiss)%in%seq(0,21),enf6,0),ageenf6=annee-anaiss)%>%
-  left_join(select(emploi,-statut),by=c("enf6"="Id","ageenf6"="age"))%>%
-  mutate(enf6=ifelse(salaire>0,0,enf6),salaireenf6=ifelse(enf6!=0,salaire,0))%>%
-  select(-anaiss,-salaire)%>%
-  left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf6"="Id","annee"="annee"))%>%
-  mutate(enf6=ifelse(matri==2,0,enf6),matrienf6=matri)%>%
-  select(-matri)
-####################
-# calcul du nombre d'UC pour les adultes et les jeunes indépendants
-####################
-nbre_uc_adultes=test%>%
-  filter(!((age<=21)&(salaire_Id==0)&(matri_Id!=2)))%>%
-  mutate(enf1=ifelse(is.na(enf1),0,enf1),enf2=ifelse(is.na(enf2),0,enf2),enf3=ifelse(is.na(enf3),0,enf3),
-         enf4=ifelse(is.na(enf4),0,enf4),enf5=ifelse(is.na(enf5),0,enf5),enf6=ifelse(is.na(enf6),0,enf6))%>%
-  mutate(nbre_uc=ifelse(conjoint>0,0.75,1)+ifelse(enf1>0&ageenf1%in%15:21,0.25,0)+ifelse(enf2>0&ageenf2%in%15:21,0.25,0)+
-           ifelse(enf3>0&ageenf3%in%15:21,0.25,0)+ifelse(enf4>0&ageenf4%in%15:21,0.25,0)+ifelse(enf5>0&ageenf5%in%15:21,0.25,0)+
-           +ifelse(enf6>0&ageenf6%in%15:21,0.25,0)+ifelse(enf1>0&ageenf1%in%0:14,0.15,0)+ifelse(enf2>0&ageenf2%in%0:14,0.15,0)+
-           ifelse(enf3>0&ageenf3%in%0:14,0.15,0)+ifelse(enf4>0&ageenf4%in%0:14,0.15,0)+ifelse(enf5>0&ageenf5%in%0:14,0.15,0)+
-           +ifelse(enf6>0&ageenf6%in%0:14,0.15,0))%>%
-  select(Id,annee,age,matri_Id,conjoint,nbre_uc)
-
-summary(nbre_uc_adultes$nbre_uc)
-
-############################
-# calcul du nombre d'uc pour les jeunes
-# on ajoute les uc entre les parents comme on ajoutera les revenus 
-###############################
-
-nbre_uc_jeunes=test%>%
-  filter(age<=21&salaire_Id==0&matri_Id!=2)%>%
-  select(age,Id,annee,mere,pere,matri_Id)%>%
-  left_join(select(nbre_uc_adultes,Id,annee,nbre_uc),by=c("mere"="Id","annee"="annee"))%>%
-  rename(nbre_uc_mere=nbre_uc)%>%
-  left_join(select(nbre_uc_adultes,Id,annee,nbre_uc),by=c("pere"="Id","annee"="annee"))%>%
-  rename(nbre_uc_pere=nbre_uc)%>%
-  mutate(nbre_uc=ifelse(!is.na(nbre_uc_pere)&!is.na(nbre_uc_mere),(nbre_uc_pere+nbre_uc_mere),
-                        ifelse(!is.na(nbre_uc_pere),nbre_uc_pere,ifelse(!is.na(nbre_uc_mere),nbre_uc_mere,1))))
-
-
-nbre_uc=bind_rows(nbre_uc_jeunes,nbre_uc_adultes) 
-
-return(nbre_uc)
+recompute_uc <- function(simul){
+  
+  table=simul$macro%>%dplyr::select(annee,Prix,PlafondSS,SMIC,PointFP,SMPT,PIB,RevaloSPC,RevaloRG,RevaloFP,MinVieil1,MinVieil2,
+                                    Mincont1,Mincont2,SalValid)%>%
+    dplyr::mutate(Mincont2/dplyr::lag(Mincont2)-1)
+  
+  
+  ##################
+  #calcul du niveau de vie des retraités
+  #################
+  emploi=simul$emp%>%
+    select(age,Id, statut)%>%
+    left_join(simul$salairenet)
+  
+  emploi=emploi%>%mutate(salaire=salaires_net)%>%
+    select(-salaires_net)
+  
+  
+  
+  test=select(filter(emploi,statut!=0),Id,age,salaire)%>% # Note : statut != 0 -> l'individu est encore présent
+    rename(salaire_Id=salaire)%>%
+    left_join((simul$ech)[,c('Id','anaiss')])%>%
+    left_join(simul$fam%>%
+                group_by(Id)%>%
+                mutate(firstf=annee==first(annee),prem_obs=first(annee))%>%
+                filter(firstf==T)%>%
+                select(Id,prem_obs))%>%  # on ne garde que les les observations à partir de la première observation dans fam
+    mutate(annee=age+anaiss)%>%
+    filter(annee>=prem_obs)%>%
+    select(-prem_obs,-anaiss)%>%
+    left_join(simul$fam)%>%
+    rename(matri_Id=matri)%>%
+    mutate(conjoint=ifelse(matri_Id==3,0,conjoint)) #pour les veufs je met le conjoint à 0
+  
+  test=test%>%  
+    left_join((simul$ech)[,c('Id','anaiss')],by=c("enf1"="Id"))%>% # on verifie ensuite pour chaque enfant s'il est à charge ou non c'est à dire s'il a moins de 21 ans
+    mutate(ageenf1=annee-anaiss,enf1=ifelse((annee-anaiss)%in%seq(0,21),enf1,0))%>% # et s'il n'a pas de revnu du travail
+    left_join(select(emploi,-statut),by=c("enf1"="Id","ageenf1"="age"))%>%
+    mutate(enf1=ifelse(salaire>0,0,enf1),salaireenf1=salaire)%>%
+    select(-anaiss,-salaire)%>%
+    left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf1"="Id","annee"="annee"))%>%
+    mutate(enf1=ifelse(matri==2,0,enf1),matrienf1=matri)%>%
+    select(-matri)
+  
+  test=test%>%
+    left_join((simul$ech)[,c('Id','anaiss')],by=c("enf2"="Id"))%>%
+    mutate(enf2=ifelse((annee-anaiss)%in%seq(0,21),enf2,0),ageenf2=annee-anaiss)%>%
+    left_join(select(emploi,-statut),by=c("enf2"="Id","ageenf2"="age"))%>%
+    mutate(enf2=ifelse(salaire>0,0,enf2),salaireenf2=salaire)%>%
+    select(-anaiss,-salaire)%>%
+    left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf2"="Id","annee"="annee"))%>%
+    mutate(enf2=ifelse(matri==2,0,enf2),matrienf2=matri)%>%
+    select(-matri)
+  test=test%>%
+    left_join((simul$ech)[,c('Id','anaiss')],by=c("enf3"="Id"))%>%
+    mutate(enf3=ifelse((annee-anaiss)%in%seq(0,21),enf3,0),ageenf3=annee-anaiss)%>%
+    left_join(select(emploi,-statut),by=c("enf3"="Id","ageenf3"="age"))%>%
+    mutate(enf3=ifelse(salaire>0,0,enf3),salaireenf3=salaire)%>%
+    select(-anaiss,-salaire)%>%
+    left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf3"="Id","annee"="annee"))%>%
+    mutate(enf3=ifelse(matri==2,0,enf3),matrienf3=matri)%>%
+    select(-matri)
+  test=test%>%
+    left_join((simul$ech)[,c('Id','anaiss')],by=c("enf4"="Id"))%>%
+    mutate(enf4=ifelse((annee-anaiss)%in%seq(0,21),enf4,0),ageenf4=annee-anaiss)%>%
+    left_join(select(emploi,-statut),by=c("enf4"="Id","ageenf4"="age"))%>%
+    mutate(enf4=ifelse(salaire>0,0,enf4),salaireenf4=salaire)%>%
+    select(-anaiss,-salaire)%>%
+    left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf4"="Id","annee"="annee"))%>%
+    mutate(enf4=ifelse(matri==2,0,enf4),matrienf4=matri)%>%
+    select(-matri)
+  test=test%>%
+    left_join((simul$ech)[,c('Id','anaiss')],by=c("enf5"="Id"))%>%
+    mutate(enf5=ifelse((annee-anaiss)%in%seq(0,21),enf5,0),ageenf5=annee-anaiss)%>%
+    left_join(select(emploi,-statut),by=c("enf5"="Id","ageenf5"="age"))%>%
+    mutate(enf5=ifelse(salaire>0,0,enf5),salaireenf5=salaire)%>%
+    select(-anaiss,-salaire)%>%
+    left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf5"="Id","annee"="annee"))%>%
+    mutate(enf5=ifelse(matri==2,0,enf5),matrienf5=matri)%>%
+    select(-matri)
+  test=test%>%
+    left_join((simul$ech)[,c('Id','anaiss')],by=c("enf6"="Id"))%>%
+    mutate(enf6=ifelse((annee-anaiss)%in%seq(0,21),enf6,0),ageenf6=annee-anaiss)%>%
+    left_join(select(emploi,-statut),by=c("enf6"="Id","ageenf6"="age"))%>%
+    mutate(enf6=ifelse(salaire>0,0,enf6),salaireenf6=ifelse(enf6!=0,salaire,0))%>%
+    select(-anaiss,-salaire)%>%
+    left_join((simul$fam)[,c('Id','annee','matri')],by=c("enf6"="Id","annee"="annee"))%>%
+    mutate(enf6=ifelse(matri==2,0,enf6),matrienf6=matri)%>%
+    select(-matri)
+  ####################
+  # calcul du nombre d'UC pour les adultes et les jeunes indépendants
+  ####################
+  nbre_uc_adultes=test%>%
+    filter(!((age<=21)&(salaire_Id==0)&(matri_Id!=2)))%>%
+    mutate(enf1=ifelse(is.na(enf1),0,enf1),enf2=ifelse(is.na(enf2),0,enf2),enf3=ifelse(is.na(enf3),0,enf3),
+           enf4=ifelse(is.na(enf4),0,enf4),enf5=ifelse(is.na(enf5),0,enf5),enf6=ifelse(is.na(enf6),0,enf6))%>%
+    mutate(nbre_uc=ifelse(conjoint>0,0.75,1)+ifelse(enf1>0&ageenf1%in%15:21,0.25,0)+ifelse(enf2>0&ageenf2%in%15:21,0.25,0)+
+             ifelse(enf3>0&ageenf3%in%15:21,0.25,0)+ifelse(enf4>0&ageenf4%in%15:21,0.25,0)+ifelse(enf5>0&ageenf5%in%15:21,0.25,0)+
+             +ifelse(enf6>0&ageenf6%in%15:21,0.25,0)+ifelse(enf1>0&ageenf1%in%0:14,0.15,0)+ifelse(enf2>0&ageenf2%in%0:14,0.15,0)+
+             ifelse(enf3>0&ageenf3%in%0:14,0.15,0)+ifelse(enf4>0&ageenf4%in%0:14,0.15,0)+ifelse(enf5>0&ageenf5%in%0:14,0.15,0)+
+             +ifelse(enf6>0&ageenf6%in%0:14,0.15,0))%>%
+    select(Id,annee,age,matri_Id,conjoint,nbre_uc)
+  
+  summary(nbre_uc_adultes$nbre_uc)
+  
+  ############################
+  # calcul du nombre d'uc pour les jeunes
+  # on ajoute les uc entre les parents comme on ajoutera les revenus 
+  ###############################
+  
+  nbre_uc_jeunes=test%>%
+    filter(age<=21&salaire_Id==0&matri_Id!=2)%>%
+    select(age,Id,annee,mere,pere,matri_Id)%>%
+    left_join(select(nbre_uc_adultes,Id,annee,nbre_uc),by=c("mere"="Id","annee"="annee"))%>%
+    rename(nbre_uc_mere=nbre_uc)%>%
+    left_join(select(nbre_uc_adultes,Id,annee,nbre_uc),by=c("pere"="Id","annee"="annee"))%>%
+    rename(nbre_uc_pere=nbre_uc)%>%
+    mutate(nbre_uc=ifelse(!is.na(nbre_uc_pere)&!is.na(nbre_uc_mere),(nbre_uc_pere+nbre_uc_mere),
+                          ifelse(!is.na(nbre_uc_pere),nbre_uc_pere,ifelse(!is.na(nbre_uc_mere),nbre_uc_mere,1))))
+  
+  
+  nbre_uc=bind_rows(nbre_uc_jeunes,nbre_uc_adultes) 
+  
+  return(nbre_uc)
 }
+
+
+
+create_data_consumption <- function(data_prediction_selection,
+                                    probability_survival_var = "proba_survie",
+                                    r = 0.03, beta = 0.992, gamma = 1){
+  
+  dt2 = capitulation::life_cycle_model(
+    data_prediction_selection[age>findet],
+    wealthvar_survey = "K_observed",
+    r = r,
+    beta = beta,
+    gamma = gamma,
+    observation_year = 2009,
+    income_var = "revenu",
+    Hgiven_var = "hg",
+    Hreceived_var = "hr",
+    probability_survival_var = probability_survival_var,
+    return_last = FALSE,
+    get_capital_income = TRUE,
+    additional_vars = c("tr_age_2015","tr_age","SEXE","findet","ageliq", "id_household", "UC")
+  )
+  
+  dt2[, conso := (1+r)*wealth + revenu + hr - dplyr::lead(wealth)]
+  dt2[, conso := conso/(1+r)]
+  
+  return(dt2)
+  
+}
+
+
+
+plot_data_consumption <- function(data_prediction_selection){
+  
+  df_plot <- data_prediction_selection[Id == 1, .SD, .SDcols = c("revenu", "conso", "Y", "age")]
+  df_plot <- data.table::melt(df_plot, id.vars=c("age"))
+  df_plot <- df_plot[order(age, variable)]
+  df_plot[, variable := factor(variable,
+                               levels = c("conso", "revenu", "Y"), 
+                               labels = c("Consumption", "Labor income", "Total income"),
+                               ordered = TRUE)]
+  
+  p <- ggplot(df_plot) +
+    geom_line(aes(x = age, y= value/1000, color = variable), size = 1)  +
+    theme_bw() +
+    theme(legend.position = "bottom") +
+    labs(x = "Age", y = "Thousand euros", color = NULL) +
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 10), limits = c(25,90))+
+    ylim(0,100) +
+    scale_color_viridis_d(option = "M") +
+    ggplot2::theme(text = ggplot2::element_text(size=28),
+                   axis.text=ggplot2::element_text(size=22),
+                   axis.text.x = ggplot2::element_text(angle = 45, hjust=1),
+                   axis.title = element_text(face = "bold"))
+  
+  return(p)
+  
+}
+
+plot_confusion <- function(langage = c('fr','eng')){
+  
+  langage <- match.arg(langage)
+  labs_x <- c(ifelse(langage == "eng", "No inheritance","Pas d'héritage"),
+              REtage:::get_labs(lbounds)
+  )
+  if (langage == "fr"){
+    labs_x <- gsub("Less than", "Moins de",labs_x)
+    labs_x <- gsub("More than", "Plus de",labs_x)
+  }
+  ylab <- ifelse(langage == "eng", 'Number of individuals', "Nombre d'individus")
+  xlab <- ifelse(langage == "eng", "Inherited amount in euros",
+                 "Valeur héritée (en euros)")
+  labels_legend <- if(langage == "eng") c("Observed","Predicted") else c("Observée", "Simulée")
+  
+  p <- ggplot(confusion) +
+    geom_histogram(aes(x = factor(value),fill = variable),
+                   stat = "count", alpha=0.6, position = 'dodge') +
+    scale_x_discrete(labels= labs_x) +
+    theme(legend.title=element_blank(), legend.position = "bottom",
+          axis.text.x = element_text(angle = 45, hjust=1)) +
+    labs(x = NULL, y = ylab)
+  
+  p <- p +
+    ggplot2::labs(y = ylab,
+                  x = xlab) +
+    ggplot2::scale_fill_manual(breaks = c("Observed","Predicted"),
+                               values=c("#69b3a2", "#404080"),
+                               labels = labels_legend) +
+    labs(fill = NULL) +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=20),
+          axis.title = element_text(size = 28, face="bold"))
+  
+  return(p)
+}
+
+
+
+plot_fit_distribution <- function(EP_2018, simulations, lang = c('fr','eng')){
+  
+  lang <- match.arg(lang)
+  
+  g2 <- ifelse(lang == "eng",
+               "Simulated","Simulée")
+  g1 <- ifelse(lang == "eng",
+               "Observed", "Observée")
+  list_p <- c(seq(1,9.5, by = 0.5), 9.9)/10
+  df <- data.table::data.table(
+    g1 =
+      get_quantiles(EP_2018, 'PATRI_NET', "POND_TRANS", p = list_p),
+    g2 = as.numeric(
+      simulations[annee==2018, round(quantile(get('wealth'), probs = list_p))]
+    ),
+    "q" = 100*list_p
+  )
+  data.table::setnames(df, old = c('g1','g2'), new = c(g1,g2))
+  df <- data.table::melt(df, id.vars = "q")
+  
+  
+  if (lang == "fr"){
+    labs1 <- list(x = "Quantile de la distribution du patrimoine net",
+                  y = "Arcsinh(patrimoine)",
+                  labels = c("Observé",
+                             "Simulé"))
+  } else{
+    labs1 <- list(x = "Quantile of net wealth",
+                  y = "arcinsh(Net wealth)",
+                  labels = c("Observed",
+                             "Simulated"))
+  }
+  
+  p_fit <- ggplot(df) +
+    # geom_line(aes(x = q, y = value, color = variable,
+    #               size = grepl("simulé", variable))) +
+    geom_line(aes(x = q, y = asinh(value), color = variable)) +
+    geom_point(aes(x = q, y = asinh(value), color = variable)) +
+    # geom_point(aes(x = q, y = value, color = variable)) +
+    scale_size_manual(values = c(0.1, 2), 
+                      labels = labs1$labels) +
+    geom_hline(yintercept = 0) +
+    theme_bw() +
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
+    guides(col = guide_legend(nrow = 1)) +
+    labs(x = labs1$x,
+         y = labs1$y,
+         size = NULL,
+         color = NULL) +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=20),
+          axis.title = element_text(size = 28, face = "bold") )
+  
+  
+  p_fit_level <- ggplot(df) +
+    # geom_line(aes(x = q, y = value, color = variable,
+    #               size = grepl("simulé", variable))) +
+    geom_line(aes(x = q, y = value, color = variable)) +
+    geom_point(aes(x = q, y = value, color = variable)) +
+    # geom_point(aes(x = q, y = value, color = variable)) +
+    scale_size_manual(values = c(0.1, 2), 
+                      labels = labs1$labels) +
+    geom_hline(yintercept = 0) +
+    theme_bw() +
+    theme(legend.position="bottom", legend.box="vertical", legend.margin=margin()) +
+    guides(col = guide_legend(nrow = 2)) +
+    labs(x = labs1$x,
+         y = labs1$y,
+         size = NULL,
+         color = NULL) +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=20),
+          axis.title = element_text(size = 28, face = "bold") )
+  # scale_y_continuous(trans = tn)
+  
+  return(list(p_fit, p_fit_level))
+}
+
+
+
+plot_top_shares2 <- function(simul_copy, threshold = 0.99, lang = c("eng","fr")){
+  
+  lang <- match.arg(lang)
+  
+  if (lang == "fr"){
+    lab <- list(x = "Année", y = sprintf("Part du top %s%%", 100*(1 - threshold)),
+                labels = c("Revenus du travail","Revenu total",'Patrimoine net')
+    )
+  } else{
+    lab <- list(x = "Year", y = sprintf("Top %s%% share", 100*(1 - threshold)),
+                labels = c("Labor income","Total income",'Wealth')
+    )
+    
+  }
+  
+  cols <- setNames(c('darkgreen', 'royalblue3', 'hotpink4'),
+                   c(sprintf("top%s labor income", 100*(1 - threshold)),
+                     sprintf("top%s total income", 100*(1 - threshold)),
+                     sprintf("top%s wealth", 100*(1 - threshold)))
+  )
+  
+  
+  p3 <- capitulation::plot_top_share(simul_copy, threshold = threshold, 
+                                     negative_values = "truncate") +
+    theme_bw() + 
+    theme(legend.position = "bottom") +
+    labs(x = lab$x, y = lab$y,
+         color = NULL) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    theme(axis.text=element_text(size=24),
+          axis.title=element_text(size=24,face="bold"),
+          legend.text=element_text(size=24)) +
+    scale_colour_manual(
+      # palette = "Set1",
+      values = cols,
+      labels = lab$labels
+    )
+  
+  return(p3)
+  
+}
+
+plot_gini2 <- function(simul_copy, lang = c("English","French")){
+  
+  lang <- match.arg(lang)
+  
+  if (lang == "French"){
+    lab <- list(x = "Année", y = "Indice de Gini",
+                labels = c("Revenus du travail","Revenu total", 'Patrimoine net')
+    )
+  } else{
+    lab <- list(x = "Year", y = "Gini index",
+                labels = c("Labor income","Total income", 'Wealth')
+    )
+    
+  }
+  
+  cols <- setNames(c('darkgreen', 'royalblue3', 'hotpink4'),
+                   c("revenu", "Y", "wealth")
+  )
+  
+  p3 <- capitulation::plot_gini(simul_copy,
+                                langage = "English",
+                                labels = c("revenu", "Y", "wealth"),
+                                vars = c("revenu", "Y", "wealth"),
+                                negative_values = "truncate") +
+    theme(axis.text=element_text(size=24),
+          axis.title=element_text(size=24,face="bold"),
+          legend.text=element_text(size=24)) +
+    labs(y = lab$y, x = lab$x) +
+    scale_colour_manual(
+      # palette = "Set1",
+      values = cols,
+      labels = lab$labels
+    )
+  
+  p3
+  
+  return(p3)
+  
+}
+
+
+plot_top_share_together <- function(
+  p3_household_top10, 
+  p3_household_top10_no_risk,
+  threshold = 0.9
+){
+  
+  temp_risk = data.table::copy(p3_household_top10$data)
+  temp_no_risk = data.table::copy(p3_household_top10_no_risk$data)[category != sprintf("top%s labor income", 100*(1 - threshold))]
+  temp_risk[, 'Model':= "Mortality risk" ]
+  temp_no_risk[, 'Model':= "No mortality risk" ]
+  
+  temp <- data.table::rbindlist(
+    list(temp_risk, temp_no_risk)
+  )
+  temp[category == "top10 labor income", 'Model' := "Common component"]
+  temp[, category := Hmisc::capitalize(
+    gsub(
+      sprintf("top%s ", 100*(1 - threshold)), "", category)
+  )]
+  
+  
+  cols <- setNames(c('darkgreen', 'royalblue3', 'hotpink4'),
+                   c("Labor income",
+                     "Total income",
+                     "Wealth")
+  )
+  
+  
+  
+  p <- ggplot(temp) +
+    geom_line(aes(x = annee, y = share, color=category, linetype = factor(Model)),
+              size = 1) +
+    theme_bw() +
+    theme(legend.position = "bottom", legend.box = "vertical") +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    theme(axis.text=element_text(size=24),
+          legend.title = element_text(size=24,face="bold"),
+          axis.title=element_text(size=24,face="bold"),
+          legend.text=element_text(size=24)) +
+    scale_colour_manual(values = cols) +
+    scale_linetype_manual(values = c("solid", "dashed", "dotted")) +
+    labs(x = "Year",
+         y = paste0(
+           sprintf("Top %s", 100*(1 - threshold)),
+           "% share"),
+         color = "Variable",
+         linetype = "Model"
+    )
+  
+  return(p)
+}
+
+
+create_table_nv <- function(simul_copy, simul_household, stat = mean){
+  
+  
+  data_household_indiv <- merge(simul_copy, simul_household, by = c("id_household", "annee"),
+                                suffixes = c("_indiv","_household"))
+  data_household_indiv <- merge(data_household_indiv, retraites, by = c("Id","annee"), all.x = TRUE)
+  data_household_indiv[is.na(statut_ret), "statut_ret" := "actif"]
+  
+  
+  #data_household_indiv <- data_household_indiv[wealth_indiv<0]
+  
+  agg_nv = data_household_indiv[,.(w = stat(revenu_household/UC_household, na.rm = TRUE),
+                                   y = stat(Y_household/UC_household, na.rm = TRUE)),
+                                by = c("statut_ret",'annee')]
+  agg_nv_pop = data_household_indiv[,.(w_pop = stat(revenu_household/UC_household, na.rm = TRUE),
+                                       y_pop = stat(Y_household/UC_household, na.rm = TRUE)), by = c('annee')]
+  agg_nv = merge(agg_nv, agg_nv_pop)
+  agg_nv[, `:=`(w = w/w_pop,y = y/y_pop)]
+  
+  return(agg_nv)
+  #agg_nv = dcast(agg_nv, annee ~ statut_ret, value.var = c("w","y"))
+  # agg_nv[, `:=`(w = w_retraite/w_actif, y = y_retraite/y_actif)]
+  # agg_nv_mean = data_household_indiv[,.(w = mean(revenu_uc), y = mean(Y_uc)), by = c("statut_ret",'annee')]
+  # agg_nv_mean[annee == 2013, t := w/mean(data_household_indiv[annee == 2013]$revenu_uc)]
+  # agg_nv_mean[annee == 2013]
+}
+
+plot_nv_evol <- function(agg_nv){
+  
+  cols <- c("w" = "red", "y" = "blue")
+  
+  p <- ggplot2::ggplot(melt(agg_nv[statut_ret == "retraite" & annee >2009,c('annee', 'w',"y")], id.vars = "annee")) +
+    geom_line(aes(x = annee, y = value, color = variable)) +
+    scale_y_continuous(labels = scales::percent) +
+    coord_cartesian(xlim = c(2010, 2040)) +
+    theme_bw() +
+    scale_color_manual(values = cols, breaks = c("w", "y"),
+                       labels = c("Labor income", "Total income (capital income included)")) +
+    theme(legend.position = "bottom") +
+    labs(color = NULL, x = "Year",
+         y = "Relative standard of living of retirees\n(wrt whole population)") +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=20),
+          axis.title = element_text(size = 22, face="bold"))
+  
+  return(p)
+
+}
+
+
+plot_nv_together <- function(p_nv, p_nv_no_risk, labels = c("Mortality risk", "No mortality risk")){
+  
+  cols <- c("w" = "red", "y" = "blue")
+  
+  temp_risk = data.table::copy(p_nv$data)
+  temp_no_risk = data.table::copy(p_nv_no_risk$data)
+  temp_no_risk = data.table::as.data.table(temp_no_risk)[get('variable') != "w"]
+  temp_risk[, 'Model':= labels[1] ]
+  temp_no_risk[, 'Model':= labels[2] ]
+  
+  temp <- data.table::rbindlist(
+    list(temp_risk, temp_no_risk)
+  )
+  
+  
+  p <- ggplot(temp, aes(x = annee, y = value, linetype = Model, color = variable)) +
+    geom_line() +
+    scale_y_continuous(labels = scales::percent) +
+    coord_cartesian(xlim = c(2010, 2040)) +
+    theme_bw() +
+    scale_color_manual(values = cols, breaks = c("w", "y"),
+                       labels = c("Labor income", "Total income (capital income included)")) +
+    theme(legend.position = "bottom", legend.direction = "vertical") +
+    labs(color = "Income definition", x = "Year",
+         y = "Relative standard of living of retirees\n(wrt whole population)") +
+    theme(text = element_text(size=20),
+          axis.text=element_text(size=20),
+          axis.title = element_text(size = 22, face="bold"))
+  
+  return(p)
+  
+}
+
+
+plot_consumption_together <- function(p1,p2){
+  
+  temp_risk <- p1$data[variable == "Consumption"]
+  temp_no_risk <- p2$data[variable == "Consumption"]
+  
+  temp_risk[, "Model" := "Mortality risk"]
+  temp_no_risk[, "Model" := "No mortality risk"]
+  
+  temp <- data.table::rbindlist(
+    list(
+      temp_risk,
+      temp_no_risk
+    )
+  )
+  
+  p <- ggplot(temp) +
+    geom_line(aes(x = age, y= value/1000, color = factor(Model)), size = 1)  +
+    theme_bw() +
+    theme(legend.position = "bottom") +
+    labs(x = "Age", y = "Thousand euros", color = NULL) +
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 10), limits = c(25,90))+
+    ylim(0,100) +
+    scale_color_manual(values = c("royalblue", "red")) +
+    ggplot2::theme(text = ggplot2::element_text(size=28),
+                   axis.text=ggplot2::element_text(size=22),
+                   axis.text.x = ggplot2::element_text(angle = 45, hjust=1),
+                   axis.title = element_text(face = "bold"))
+  
+  return(p)
+  
+}
+
+restructure_simulations <- function(simulation, uc){
+  
+  simul_copy <- data.table::copy(simulation)
+  uc <- data.table::copy(uc)
+  if ("nbre_uc" %in% colnames(uc)) data.table::setnames(uc, "nbre_uc", "UC")
+  simul_copy[,'UC' := NULL]
+  
+  simul_copy <- merge(simul_copy, uc[,.SD, .SDcols = c("Id",'annee', "UC")],
+                      all.x =TRUE, by = c('Id','annee'))
+  simul_copy[wealth<0, wealth := 0]
+  
+  return(simul_copy)
+}
+
+create_simul_household <- function(dt){
+  simul_household <- dt[, lapply(.SD, sum), by = c("id_household","annee"),
+                                .SDcols = c("revenu","wealth","Y", "UC")]
+  simul_household[, `:=` (revenu = revenu/UC, wealth = wealth/UC, Y=Y/UC)]
+  return(dt)
+}
+
+  
