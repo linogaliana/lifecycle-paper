@@ -1,14 +1,11 @@
-# Scripts pour reproduire les résultats du DT
+# Microsimulation de l'accumulation de patrimoine: scripts principaux
 
-<!-- badges: start -->
-<!-- badges: end -->
-
+Lino Galiana
 
 # Architecture générale du projet
 
 Ce dépôt centralise l'ensemble des scripts finaux nécessaires pour produire le papier. Il utilise un certain nombre de :package: qui contiennent les fonctions nécessaires pour pouvoir traiter et représenter les données, estimer les modèles, etc. 
-
-Le coeur du projet de microsimulation contient, pour le moment, 3 packages ainsi que 3 packages satellites. La prolifération des packages répond aux besoins multiples nécessaires dans ce projet et vise à séparer les tâches spécifiques des tâches générales. 
+La prolifération des packages répond aux besoins multiples nécessaires dans ce projet et vise à séparer les tâches spécifiques des tâches générales. 
 
 ## Coeur du projet
 
@@ -29,6 +26,6 @@ Les packages suivants sont utilisés:
 
 ## Exécution
 
-- Le script `estimation.R` est le script maître pour l'estimation
-- Le script `output-DT.R` génère les résultats
+- Le `pipeline` principal utilise le package `targets` pour orchestrer
+le workflow
 
