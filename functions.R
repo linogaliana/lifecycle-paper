@@ -1281,7 +1281,7 @@ plot_top_share_together <- function(
   temp <- data.table::rbindlist(
     list(temp_risk, temp_no_risk)
   )
-  temp[category == "top10 labor income", 'Model' := "Common component"]
+  temp[category == sprintf("top%s labor income", 100*(1 - threshold)), 'Model' := "Common component"]
   temp[, category := Hmisc::capitalize(
     gsub(
       sprintf("top%s ", 100*(1 - threshold)), "", category)

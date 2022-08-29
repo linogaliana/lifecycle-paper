@@ -190,7 +190,8 @@ library(dplyr)
 
 data.table::setnames(uc, "nbre_uc", "UC")
 
-
+tar_load(simulations2_contrefactuel_beta)
+tar_load(simulations_contrefatuel_beta)
 
 simul_copy <- restructure_simulations(simulations2, uc)
 simul_copy_no_risk <- restructure_simulations(simulations, uc)
@@ -216,7 +217,7 @@ simul_household_contrefactuel_beta_no_risk <- simul_copy_contrefactuel_beta_no_r
 simul_household_contrefactuel_beta_no_risk[, `:=` (revenu = revenu/UC, wealth = wealth/UC, Y=Y/UC)]
 
 
-# top 10% ==========
+# top 10% =========
 
 p3 <- plot_top_shares2(simul_copy, threshold = 0.9, lang = "eng")
 
@@ -239,7 +240,7 @@ p3_new_top10 = plot_top_share_together(
   p3_household_top10_no_risk,
   0.9
 )
-ggsave(plot = p3_new_top10, sprintf("./output_ret_soc_v3/top10_DT.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3_new_top10, "./output_ret_soc_v3/top10_DT.pdf", width = 12, height = 8)
 
 
 
@@ -247,12 +248,12 @@ ggsave(plot = p3_new_top10, sprintf("./output_ret_soc_v3/top10_DT.pdf", dir), wi
 # top 1% ==========
 
 p3 <- plot_top_shares2(simul_copy, threshold = 0.99, lang = "eng")
-p3_fr <- plot_top_shares2(simul_copy, threshold = 0.99, lang = "fr")
-p3_household_fr <- plot_top_shares2(simul_household, threshold = 0.99, lang = "fr")
 
 p3_household_top1 <- plot_top_shares2(simul_household, threshold = 0.99, lang = "eng")
 p3_household_top1_no_risk <- plot_top_shares2(simul_household_no_risk, threshold = 0.99, lang = "eng")
 
+p3_fr <- plot_top_shares2(simul_copy, threshold = 0.99, lang = "fr")
+p3_household_fr <- plot_top_shares2(simul_household, threshold = 0.99, lang = "fr")
 
 ggsave(plot = p3_household_top1, sprintf("./output_ret_soc_v3/top1_DT.pdf", dir), width = 12, height = 8)
 ggsave(plot = p3_household_fr, sprintf("./output_ret_soc_v3/top1.png", dir), width = 12, height = 8)
@@ -274,7 +275,8 @@ p3_new_top1 = plot_top_share_together(
   p3_household_top1_no_risk,
   0.99
 )
-ggsave(plot = p3_new_top1, sprintf("./output_ret_soc_v3/top1_DT.pdf", dir), width = 12, height = 8)
+ggsave(plot = p3_new_top1, "./output_ret_soc_v3/top1_DT.pdf", width = 12, height = 8)
+
 
 
 # nviem_retraites/nviem_actifs -----------------
