@@ -1,3 +1,0 @@
-[submodule "microCI"]
-	path = microCI
-	url = https://git.stable.innovation.insee.eu/microsimulation/microsimulationci.git
